@@ -1,0 +1,90 @@
+import { createRouter, createWebHistory } from 'vue-router'
+
+const routes = [
+  {
+    path: '/',
+    name: 'Home',
+    component: () => import('@/views/home/index.vue'),
+    meta: { title: '赵家大院' }
+  },
+  {
+    path: '/family-tree',
+    name: 'FamilyTree',
+    component: () => import('@/views/family-tree/index.vue'),
+    meta: { title: '家谱' }
+  },
+  {
+    path: '/core-family',
+    name: 'CoreFamily',
+    component: () => import('@/views/core-family/index.vue'),
+    meta: { title: '我爱我家' }
+  },
+  {
+    path: '/core-family-detail',
+    name: 'CoreFamilyDetail',
+    component: () => import('@/views/core-family/detail.vue'),
+    meta: { title: '家族动态圈' }
+  },
+  {
+    path: '/memoir',
+    name: 'Memoir',
+    component: () => import('@/views/memoir/index.vue'),
+    meta: { title: '回忆录' }
+  },
+  {
+    path: '/memoir-record',
+    name: 'MemoirRecord',
+    component: () => import('@/views/memoir/record.vue'),
+    meta: { title: '录制回忆' }
+  },
+  {
+    path: '/memoir-detail',
+    name: 'MemoirDetail',
+    component: () => import('@/views/memoir/detail.vue'),
+    meta: { title: '回忆详情' }
+  },
+  {
+    path: '/milestone',
+    name: 'Milestone',
+    component: () => import('@/views/milestone/index.vue'),
+    meta: { title: '团圆大事记' }
+  },
+  {
+    path: '/milestone-create',
+    name: 'MilestoneCreate',
+    component: () => import('@/views/milestone/create.vue'),
+    meta: { title: '记录大事' }
+  },
+  {
+    path: '/milestone-detail',
+    name: 'MilestoneDetail',
+    component: () => import('@/views/milestone/detail.vue'),
+    meta: { title: '大事记详情' }
+  },
+  {
+    path: '/mine',
+    name: 'Mine',
+    component: () => import('@/views/mine/index.vue'),
+    meta: { title: '我的' }
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/login/index.vue'),
+    meta: { title: '登录' }
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+// 路由守卫
+router.beforeEach((to, from, next) => {
+  // 设置页面标题
+  document.title = to.meta.title ? `${to.meta.title} - 赵家大院` : '赵家大院'
+  next()
+})
+
+export default router
