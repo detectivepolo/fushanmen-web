@@ -44,6 +44,12 @@ const routes = [
     meta: { title: '回忆详情' }
   },
   {
+    path: '/memoir-collection',
+    name: 'MemoirCollection',
+    component: () => import('@/views/memoir/collection.vue'),
+    meta: { title: '合集回忆录' }
+  },
+  {
     path: '/milestone',
     name: 'Milestone',
     component: () => import('@/views/milestone/index.vue'),
