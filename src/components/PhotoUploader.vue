@@ -26,21 +26,11 @@
       @change="handleFileChange"
       style="display: none"
     />
-    <!-- 移动端兼容：使用capture属性 -->
-    <input 
-      v-if="isMobile"
-      ref="fileInputMobile"
-      type="file" 
-      accept="image/*"
-      capture="environment"
-      @change="handleFileChange"
-      style="display: none"
-    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -58,37 +48,59 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
-
 const fileInput = ref(null)
-const fileInputMobile = ref(null)
-
-const isMobile = computed(() => {
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-})
+const isProcessing = ref(false)
 
 function triggerUpload() {
-  if (isMobile.value && fileInputMobile.value) {
-    fileInputMobile.value.click()
-  } else if (fileInput.value) {
+  if (!isProcessing.value && fileInput.value) {
     fileInput.value.click()
   }
 }
 
-function handleFileChange(event) {
-  const files = event.target.files
-  if (!files || files.length === 0) return
-
-  Array.from(files).forEach(file => {
-    if (props.modelValue.length >= props.maxCount) return
-    
+// 压缩图片，防止 localStorage 溢出
+function compressImage(file, maxWidth = 800, quality = 0.7) {
+  return new Promise((resolve) => {
     const reader = new FileReader()
     reader.onload = (e) => {
-      emit('update:modelValue', [...props.modelValue, e.target.result])
+      const img = new Image()
+      img.onload = () => {
+        let { width, height } = img
+        if (width > maxWidth) {
+          height = Math.round(height * maxWidth / width)
+          width = maxWidth
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.src = e.target.result
     }
     reader.readAsDataURL(file)
   })
+}
 
-  // 清空input以便重复选择同一文件
+async function handleFileChange(event) {
+  const files = event.target.files
+  if (!files || files.length === 0) return
+
+  isProcessing.value = true
+  const newPhotos = [...props.modelValue]
+
+  for (const file of Array.from(files)) {
+    if (newPhotos.length >= props.maxCount) break
+    try {
+      const compressed = await compressImage(file)
+      newPhotos.push(compressed)
+    } catch (e) {
+      console.error('图片处理失败:', e)
+    }
+  }
+
+  emit('update:modelValue', newPhotos)
+  isProcessing.value = false
   event.target.value = ''
 }
 
@@ -155,8 +167,7 @@ function removePhoto(index) {
 
 .upload-trigger:active {
   border-color: var(--primary-color);
-  background: var(--primary-color);
-  background-opacity: 0.1;
+  opacity: 0.7;
 }
 
 .upload-icon {
