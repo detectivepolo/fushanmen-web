@@ -1,109 +1,123 @@
 <template>
   <div class="page-container">
-    <!-- 头部 -->
+    <!-- 顶部 -->
     <header class="home-header">
-      <div class="header-content">
-        <div class="family-badge">
-          <span class="badge-icon">🏠</span>
-          <span class="badge-text">赵家大院</span>
+      <div class="header-inner">
+        <div class="family-mark">
+          <span class="mark-text">福善门</span>
+          <span class="mark-sub">赵家大院</span>
         </div>
-        <div class="user-greeting">
-          <span class="greeting-text">{{ greeting }}</span>
-          <span class="user-name">{{ userStore.displayName }}</span>
+        <div class="greeting">
+          <span class="greeting-word">{{ greeting }}，</span>
+          <span class="greeting-name">{{ userStore.displayName }}</span>
         </div>
       </div>
-      <div class="header-decoration"></div>
     </header>
 
-    <!-- 四大板块卡片 -->
-    <div class="section-cards">
-      <div class="card-row">
-        <div class="feature-card" @click="goToPage('/family-tree')">
-          <span class="card-icon">🌳</span>
-          <span class="card-title">家谱</span>
-          <span class="card-desc">家族成员</span>
-        </div>
-        <div class="feature-card" @click="goToPage('/core-family')">
-          <span class="card-icon">👨‍👩‍👧‍👦</span>
-          <span class="card-title">我爱我家</span>
-          <span class="card-desc">家庭动态</span>
-        </div>
-      </div>
-      <div class="card-row">
-        <div class="feature-card" @click="goToPage('/memoir')">
-          <span class="card-icon">🎙️</span>
-          <span class="card-title">回忆录</span>
-          <span class="card-desc">记录故事</span>
-        </div>
-        <div class="feature-card" @click="goToPage('/milestone')">
-          <span class="card-icon">📅</span>
-          <span class="card-title">大事记</span>
-          <span class="card-desc">团圆时刻</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 统计数据 -->
-    <div class="stats-section">
-      <div class="section-title">
-        <span class="title-icon">📊</span>
-        <span>家族数据</span>
-      </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <span class="stat-value">{{ stats.totalMembers }}</span>
-          <span class="stat-label">家族成员</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">{{ stats.aliveMembers }}</span>
-          <span class="stat-label">家族长辈</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">{{ stats.totalMemoirs }}</span>
-          <span class="stat-label">回忆录</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">{{ formatDuration(stats.totalDuration) }}</span>
-          <span class="stat-label">录音时长</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 最新回忆 -->
-    <div class="recent-section" v-if="recentMemoirs.length > 0">
-      <div class="section-title">
-        <span class="title-icon">🎧</span>
-        <span>最新回忆</span>
-        <router-link to="/memoir" class="more-link">更多 ›</router-link>
-      </div>
-      <div class="recent-list">
-        <div 
-          v-for="memoir in recentMemoirs" 
-          :key="memoir.id"
-          class="recent-item"
-          @click="goToMemoirDetail(memoir.id)"
-        >
-          <div class="item-avatar">
-            {{ memoir.protagonist.name.charAt(0) }}
+    <div class="home-body">
+      <!-- ====== 回忆录核心区 ====== -->
+      <div class="memoir-center">
+        <!-- 中心大卡 -->
+        <div class="memoir-core-card" @click="goToPage('/memoir')">
+          <div class="core-icon">🎙️</div>
+          <h2 class="core-title">回忆录</h2>
+          <p class="core-desc">用声音留住时光</p>
+          <div class="core-stats">
+            <span>{{ stats.totalMemoirs }} 篇回忆</span>
+            <span class="dot">·</span>
+            <span>{{ formatDuration(stats.totalDuration) }} 录音</span>
           </div>
-          <div class="item-content">
-            <div class="item-title">{{ memoir.title }}</div>
-            <div class="item-meta">
-              <span class="item-author">{{ memoir.author.name }}</span>
-              <span class="item-time">{{ formatDate(memoir.createdAt) }}</span>
+        </div>
+
+        <!-- 辐射：家谱 -->
+        <div class="satellite satellite-left" @click="goToPage('/family-tree')">
+          <div class="satellite-card">
+            <span class="sat-icon">🌳</span>
+            <span class="sat-title">赵家家谱</span>
+            <span class="sat-num">{{ stats.totalMembers }}人</span>
+          </div>
+          <div class="orbit-line orbit-left"></div>
+        </div>
+
+        <!-- 辐射：大事记 -->
+        <div class="satellite satellite-right" @click="goToPage('/milestone')">
+          <div class="satellite-card">
+            <span class="sat-icon">📅</span>
+            <span class="sat-title">大事记</span>
+            <span class="sat-num">{{ stats.totalMilestones }}件</span>
+          </div>
+          <div class="orbit-line orbit-right"></div>
+        </div>
+      </div>
+
+      <!-- ====== 合集回忆录 ====== -->
+      <div class="section-block">
+        <div class="block-header">
+          <h3 class="block-title">家族合集</h3>
+          <span class="block-desc">多人回忆交织印证</span>
+        </div>
+        <div class="collection-list">
+          <div 
+            v-for="col in collections" 
+            :key="col.id"
+            class="collection-card"
+            @click="goToCollection(col.id)"
+          >
+            <div class="col-cover">
+              <span class="col-emoji">📖</span>
             </div>
+            <div class="col-info">
+              <h4 class="col-name">{{ col.title }}</h4>
+              <p class="col-desc">{{ col.desc }}</p>
+              <div class="col-authors">
+                <span 
+                  v-for="author in col.authors" 
+                  :key="author"
+                  class="col-author-tag"
+                >{{ author }}</span>
+              </div>
+            </div>
+            <span class="col-arrow">›</span>
           </div>
-          <span class="item-duration">{{ formatDuration(memoir.duration) }}</span>
         </div>
       </div>
-    </div>
 
-    <!-- 快捷入口 -->
-    <div class="quick-actions">
-      <button class="quick-btn" @click="goToRecord">
-        <span class="quick-icon">🎙️</span>
-        <span class="quick-text">录制回忆</span>
-      </button>
+      <!-- ====== 最新回忆 ====== -->
+      <div class="section-block" v-if="recentMemoirs.length > 0">
+        <div class="block-header">
+          <h3 class="block-title">最近记录</h3>
+          <router-link to="/memoir" class="more-link">更多 ›</router-link>
+        </div>
+        <div class="recent-list">
+          <div 
+            v-for="memoir in recentMemoirs" 
+            :key="memoir.id"
+            class="recent-item"
+            @click="goToMemoirDetail(memoir.id)"
+          >
+            <div class="recent-avatar">
+              {{ memoir.protagonist.name.charAt(0) }}
+            </div>
+            <div class="recent-content">
+              <div class="recent-title">{{ memoir.title }}</div>
+              <div class="recent-meta">
+                <span>{{ memoir.protagonist.name }}</span>
+                <span class="dot">·</span>
+                <span>{{ formatDate(memoir.createdAt) }}</span>
+              </div>
+            </div>
+            <span class="recent-duration">{{ formatDuration(memoir.duration) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====== 快捷录制 ====== -->
+      <div class="record-cta">
+        <button class="record-btn-large" @click="goToRecord">
+          <span class="record-emoji">🎙️</span>
+          <span class="record-text">录制新回忆</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -125,14 +139,27 @@ const greeting = computed(() => {
   if (hour < 12) return '上午好'
   if (hour < 14) return '中午好'
   if (hour < 18) return '下午好'
-  if (hour < 21) return '晚上好'
-  return '夜深了'
+  return '晚上好'
 })
 
 const stats = computed(() => familyStore.getStats())
 
-const recentMemoirs = computed(() => {
-  return familyStore.getMemoirs().slice(0, 3)
+const recentMemoirs = computed(() => familyStore.getMemoirs().slice(0, 3))
+
+// 合集回忆录 Mock 数据
+const collections = computed(() => {
+  const stored = familyStore.collections || []
+  if (stored.length > 0) return stored
+  // 默认合集
+  return [
+    {
+      id: 'col_zhao_siblings',
+      title: '赵家兄妹',
+      desc: '赵德福、赵建国、赵秀英的童年与青春记忆',
+      authors: ['赵德福', '赵建国', '赵秀英'],
+      status: 'preview'
+    }
+  ]
 })
 
 function goToPage(path) {
@@ -143,188 +170,329 @@ function goToMemoirDetail(id) {
   router.push({ path: '/memoir-detail', query: { id } })
 }
 
+function goToCollection(id) {
+  router.push({ path: '/memoir-collection', query: { id } })
+}
+
 function goToRecord() {
   router.push('/memoir-record')
 }
 
 function formatDuration(seconds) {
-  if (!seconds) return '0:00'
+  if (!seconds) return '0分'
   const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, '0')}`
+  if (mins < 1) return '不到1分'
+  return `${mins}分`
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const date = new Date(dateStr)
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  return `${month}月${day}日`
+  return `${date.getMonth() + 1}月${date.getDate()}日`
 }
 </script>
 
 <style scoped>
+/* ====== 顶部 ====== */
 .home-header {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+  background: linear-gradient(160deg, #B8765A 0%, #C8866A 50%, #D49B7E 100%);
   color: white;
-  padding: var(--spacing-2xl) var(--spacing-base) var(--spacing-4xl);
+  padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-4xl);
   position: relative;
-  overflow: hidden;
 }
 
-.header-decoration {
-  position: absolute;
-  bottom: -20px;
-  left: 0;
-  right: 0;
-  height: 40px;
-  background: var(--bg-color);
-  border-radius: 50% 50% 0 0;
-}
-
-.header-content {
+.header-inner {
   position: relative;
   z-index: 1;
 }
 
-.family-badge {
-  display: inline-flex;
-  align-items: center;
+.family-mark {
+  display: flex;
+  align-items: baseline;
   gap: var(--spacing-sm);
-  background: rgba(255, 255, 255, 0.2);
-  padding: var(--spacing-sm) var(--spacing-base);
-  border-radius: var(--radius-full);
   margin-bottom: var(--spacing-base);
 }
 
-.badge-icon {
-  font-size: var(--font-size-lg);
-}
-
-.badge-text {
-  font-size: var(--font-size-base);
-  font-weight: 500;
-}
-
-.user-greeting {
-  display: flex;
-  flex-direction: column;
-}
-
-.greeting-text {
-  font-size: var(--font-size-lg);
-  opacity: 0.9;
-}
-
-.user-name {
-  font-size: var(--font-size-2xl);
+.mark-text {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-xl);
   font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
-.section-cards {
-  padding: var(--spacing-xl) var(--spacing-base);
+.mark-sub {
+  font-size: var(--font-size-sm);
+  opacity: 0.75;
+}
+
+.greeting {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-lg);
+}
+
+.greeting-name {
+  font-weight: 600;
+}
+
+/* ====== 主体 ====== */
+.home-body {
+  padding: 0 var(--spacing-base) var(--spacing-2xl);
   margin-top: -var(--spacing-2xl);
+  position: relative;
+  z-index: 2;
 }
 
-.card-row {
-  display: flex;
-  gap: var(--spacing-base);
-  margin-bottom: var(--spacing-base);
-}
-
-.feature-card {
-  flex: 1;
-  background: var(--bg-color-card);
-  border-radius: var(--radius-xl);
-  padding: var(--spacing-lg);
+/* ====== 回忆录中心区 ====== */
+.memoir-center {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: var(--shadow-card);
+  padding: var(--spacing-base) 0 var(--spacing-xl);
+}
+
+.memoir-core-card {
+  width: 100%;
+  background: linear-gradient(145deg, #FFFFFF, #FBF7F2);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  text-align: center;
+  box-shadow: var(--shadow-lg);
   cursor: pointer;
   transition: all 0.3s;
+  border: 1px solid var(--border-color-light);
+  position: relative;
+  z-index: 2;
 }
 
-.feature-card:active {
+.memoir-core-card:active {
   transform: scale(0.98);
+  box-shadow: var(--shadow-md);
 }
 
-.card-icon {
-  font-size: 36px;
+.core-icon {
+  font-size: 48px;
   margin-bottom: var(--spacing-sm);
 }
 
-.card-title {
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: var(--text-color-primary);
-  margin-bottom: 2px;
+.core-title {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-xs);
+  letter-spacing: 0.05em;
 }
 
-.card-desc {
+.core-desc {
   font-size: var(--font-size-sm);
   color: var(--text-color-light);
+  margin-bottom: var(--spacing-base);
+  font-style: italic;
 }
 
-.stats-section,
-.recent-section {
-  padding: var(--spacing-base);
+.core-stats {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm);
 }
 
-.section-title {
+.dot {
+  color: var(--border-color-warm);
+}
+
+/* ====== 辐射卫星 ====== */
+.satellite {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-top: var(--spacing-lg);
+  position: relative;
+}
+
+.satellite-left {
+  justify-content: flex-start;
+  padding-left: var(--spacing-sm);
+}
+
+.satellite-right {
+  justify-content: flex-end;
+  padding-right: var(--spacing-sm);
+}
+
+.satellite-card {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  color: var(--text-color-primary);
-  margin-bottom: var(--spacing-base);
-}
-
-.title-icon {
-  font-size: var(--font-size-lg);
-}
-
-.more-link {
-  margin-left: auto;
-  font-size: var(--font-size-sm);
-  color: var(--primary-color);
-  text-decoration: none;
-  font-weight: normal;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-sm);
-}
-
-.stat-item {
   background: var(--bg-color-card);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-base);
-  text-align: center;
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-base) var(--spacing-lg);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 1px solid var(--border-color-light);
+}
+
+.satellite-card:active {
+  transform: scale(0.97);
   box-shadow: var(--shadow-sm);
 }
 
-.stat-value {
-  display: block;
-  font-size: var(--font-size-xl);
-  font-weight: 700;
-  color: var(--primary-color);
-  margin-bottom: 2px;
+.sat-icon {
+  font-size: 24px;
 }
 
-.stat-label {
-  font-size: var(--font-size-xs);
+.sat-title {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-color-primary);
+}
+
+.sat-num {
+  font-size: var(--font-size-sm);
   color: var(--text-color-light);
 }
 
+/* 连接线 */
+.orbit-line {
+  position: absolute;
+  top: -var(--spacing-lg);
+  height: var(--spacing-lg);
+  width: 2px;
+  background: linear-gradient(to bottom, transparent, var(--primary-soft));
+  z-index: 1;
+}
+
+.orbit-left {
+  left: 40px;
+}
+
+.orbit-right {
+  right: 40px;
+}
+
+/* ====== 区块通用 ====== */
+.section-block {
+  margin-top: var(--spacing-xl);
+}
+
+.block-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-base);
+}
+
+.block-title {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-color-primary);
+}
+
+.block-desc {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-light);
+  margin-left: var(--spacing-sm);
+}
+
+.more-link {
+  font-size: var(--font-size-sm);
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+/* ====== 合集列表 ====== */
+.collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.collection-card {
+  display: flex;
+  align-items: center;
+  background: var(--bg-color-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-base);
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: all 0.3s;
+  border-left: 3px solid var(--primary-soft);
+}
+
+.collection-card:active {
+  transform: scale(0.98);
+}
+
+.col-cover {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--bg-color-warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: var(--spacing-base);
+}
+
+.col-emoji {
+  font-size: 28px;
+}
+
+.col-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.col-name {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  color: var(--text-color-primary);
+  margin-bottom: 2px;
+}
+
+.col-desc {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-secondary);
+  margin-bottom: var(--spacing-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-authors {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.col-author-tag {
+  font-size: var(--font-size-xs);
+  color: var(--primary-color);
+  background: var(--primary-bg);
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+}
+
+.col-arrow {
+  font-size: var(--font-size-xl);
+  color: var(--text-color-light);
+  margin-left: var(--spacing-sm);
+}
+
+/* ====== 最近回忆 ====== */
 .recent-list {
   background: var(--bg-color-card);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 
 .recent-item {
@@ -344,82 +512,80 @@ function formatDate(dateStr) {
   background: var(--bg-color-secondary);
 }
 
-.item-avatar {
-  width: 44px;
-  height: 44px;
+.recent-avatar {
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-md);
   font-weight: 600;
   margin-right: var(--spacing-base);
   flex-shrink: 0;
 }
 
-.item-content {
+.recent-content {
   flex: 1;
   min-width: 0;
 }
 
-.item-title {
+.recent-title {
   font-size: var(--font-size-base);
   font-weight: 500;
   color: var(--text-color-primary);
-  margin-bottom: 4px;
-  white-space: nowrap;
+  margin-bottom: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.item-meta {
-  display: flex;
-  gap: var(--spacing-sm);
+.recent-meta {
   font-size: var(--font-size-sm);
   color: var(--text-color-light);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
 }
 
-.item-duration {
+.recent-duration {
   font-size: var(--font-size-sm);
-  color: var(--text-color-secondary);
+  color: var(--primary-color);
   margin-left: var(--spacing-sm);
 }
 
-.quick-actions {
-  padding: var(--spacing-xl) var(--spacing-base);
-  position: fixed;
-  bottom: calc(70px + var(--safe-area-inset-bottom));
-  left: 0;
-  right: 0;
+/* ====== 录制按钮 ====== */
+.record-cta {
+  margin-top: var(--spacing-xl);
   display: flex;
   justify-content: center;
-  pointer-events: none;
 }
 
-.quick-btn {
+.record-btn-large {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-base) var(--spacing-2xl);
+  padding: var(--spacing-base) var(--spacing-3xl);
   background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
   color: white;
   border: none;
   border-radius: var(--radius-full);
   font-size: var(--font-size-md);
   font-weight: 500;
+  font-family: var(--font-sans);
   box-shadow: var(--shadow-primary);
   cursor: pointer;
-  pointer-events: auto;
   transition: all 0.3s;
 }
 
-.quick-btn:active {
-  transform: scale(0.95);
+.record-btn-large:active {
+  transform: scale(0.96);
+  opacity: 0.9;
 }
 
-.quick-icon {
-  font-size: var(--font-size-lg);
+.record-emoji {
+  font-size: 20px;
 }
 </style>
