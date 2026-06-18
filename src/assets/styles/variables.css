@@ -1,0 +1,112 @@
+/**
+ * 福善门设计系统变量
+ * 严格沿用小程序已有设计规范
+ */
+
+/* 主题色 */
+:root {
+  /* 主色调 */
+  --primary-color: #C48C6F;
+  --primary-light: #D4A68D;
+  --primary-dark: #A67558;
+  
+  /* 背景色 */
+  --bg-color: #FDF8F5;
+  --bg-color-secondary: #FAF5F2;
+  --bg-color-card: #FFFFFF;
+  
+  /* 文字色 */
+  --text-color-primary: #3D3D3D;
+  --text-color-secondary: #6B6B6B;
+  --text-color-light: #999999;
+  --text-color-white: #FFFFFF;
+  
+  /* 功能色 */
+  --success-color: #4CAF50;
+  --warning-color: #FF9800;
+  --danger-color: #E53935;
+  --info-color: #2196F3;
+  
+  /* 边框色 */
+  --border-color: #E8E0DC;
+  --border-color-light: #F0E8E4;
+}
+
+/* 字体大小 - 老年人友好，大字号 */
+:root {
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-md: 18px;
+  --font-size-lg: 20px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 28px;
+  --font-size-3xl: 32px;
+  --font-size-4xl: 36px;
+}
+
+/* 间距 */
+:root {
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-base: 16px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+  --spacing-2xl: 32px;
+  --spacing-3xl: 40px;
+  --spacing-4xl: 48px;
+}
+
+/* 圆角 */
+:root {
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+}
+
+/* 阴影 */
+:root {
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 2px 12px rgba(196, 140, 111, 0.15);
+  --shadow-primary: 0 4px 16px rgba(196, 140, 111, 0.3);
+}
+
+/* z-index层级 */
+:root {
+  --z-index-base: 1;
+  --z-index-dropdown: 100;
+  --z-index-sticky: 200;
+  --z-index-fixed: 500;
+  --z-index-modal: 800;
+  --z-index-popover: 900;
+  --z-index-toast: 9999;
+}
+
+/* 按钮样式 */
+:root {
+  --button-height-sm: 36px;
+  --button-height-base: 44px;
+  --button-height-lg: 52px;
+  --button-font-size: var(--font-size-md);
+}
+
+/* 图标大小 */
+:root {
+  --icon-size-sm: 16px;
+  --icon-size-base: 20px;
+  --icon-size-md: 24px;
+  --icon-size-lg: 32px;
+  --icon-size-xl: 40px;
+}
+
+/* 安全区域 */
+:root {
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
