@@ -3,6 +3,21 @@ import { ref } from 'vue'
 
 const STORAGE_KEY = 'fushanmen_family_data'
 
+// ============ 合集回忆录 Mock 数据 ============
+const defaultCollections = [
+  {
+    id: 'col_zhao_siblings',
+    title: '赵家兄妹',
+    desc: '赵德福、赵建国、赵秀英的童年与青春记忆',
+    authors: ['赵德福', '赵建国', '赵秀英'],
+    members: ['member_001', 'member_002', 'member_003'],
+    period: '1950s-1970s',
+    status: 'preview',
+    sourceMemoirs: ['memoir_001', 'memoir_002'],
+    mergedContent: '这是AI将多位家族成员的回忆录交叉融合后生成的完整叙事。不同的视角汇聚在一起，拼出更完整的故事。\n\n（此功能需要接入AI服务后启用）'
+  }
+]
+
 // ============ localStorage 持久化 ============
 function loadFromStorage() {
   try {
@@ -158,12 +173,14 @@ const initialMembers = stored?.members || defaultMembers
 const initialMemoirs = stored?.memoirs || defaultMemoirs
 const initialMilestones = stored?.milestones || defaultMilestones
 const initialDynamics = stored?.dynamics || defaultDynamics
+const initialCollections = stored?.collections || defaultCollections
 
 export const useFamilyStore = defineStore('family', () => {
   const members = ref(initialMembers)
   const memoirs = ref(initialMemoirs)
   const milestones = ref(initialMilestones)
   const dynamics = ref(initialDynamics)
+  const collections = ref(initialCollections)
   const currentMember = ref(null)
 
   // ============ 持久化函数 ============
@@ -172,7 +189,8 @@ export const useFamilyStore = defineStore('family', () => {
       members: members.value,
       memoirs: memoirs.value,
       milestones: milestones.value,
-      dynamics: dynamics.value
+      dynamics: dynamics.value,
+      collections: collections.value
     })
   }
 
@@ -277,6 +295,26 @@ export const useFamilyStore = defineStore('family', () => {
     return dynamics.value
   }
 
+  // ============ 合集回忆录 ============
+  function getCollections() {
+    return collections.value
+  }
+
+  function getCollectionById(id) {
+    return collections.value.find(c => c.id === id)
+  }
+
+  function addCollection(col) {
+    const newCol = {
+      id: `col_${Date.now()}`,
+      ...col,
+      status: 'preview'
+    }
+    collections.value.push(newCol)
+    persist()
+    return newCol
+  }
+
   // ============ 统计 ============
   function getStats() {
     return {
@@ -299,6 +337,7 @@ export const useFamilyStore = defineStore('family', () => {
     memoirs.value = [...defaultMemoirs]
     milestones.value = [...defaultMilestones]
     dynamics.value = [...defaultDynamics]
+    collections.value = [...defaultCollections]
     persist()
   }
 
@@ -307,6 +346,7 @@ export const useFamilyStore = defineStore('family', () => {
     memoirs,
     milestones,
     dynamics,
+    collections,
     currentMember,
     getMembers,
     getMemberById,
@@ -322,6 +362,9 @@ export const useFamilyStore = defineStore('family', () => {
     getMilestoneById,
     addMilestone,
     getDynamics,
+    getCollections,
+    getCollectionById,
+    addCollection,
     getStats,
     setCurrentMember,
     resetData
