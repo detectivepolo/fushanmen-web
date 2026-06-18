@@ -1,8 +1,29 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-// Mock数据
-const mockFamilyMembers = [
+const STORAGE_KEY = 'fushanmen_family_data'
+
+// ============ localStorage 持久化 ============
+function loadFromStorage() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY)
+    if (data) return JSON.parse(data)
+  } catch (e) {
+    console.error('读取本地数据失败:', e)
+  }
+  return null
+}
+
+function saveToStorage(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  } catch (e) {
+    console.error('保存本地数据失败:', e)
+  }
+}
+
+// ============ 默认 Mock 数据 ============
+const defaultMembers = [
   {
     id: 'member_001',
     name: '赵德福',
@@ -58,7 +79,7 @@ const mockFamilyMembers = [
   }
 ]
 
-const mockMemoirs = [
+const defaultMemoirs = [
   {
     id: 'memoir_001',
     title: '爷爷的童年回忆',
@@ -85,7 +106,7 @@ const mockMemoirs = [
   }
 ]
 
-const mockMilestones = [
+const defaultMilestones = [
   {
     id: 'milestone_001',
     title: '2024年春节团圆',
@@ -108,7 +129,7 @@ const mockMilestones = [
   }
 ]
 
-const mockDynamics = [
+const defaultDynamics = [
   {
     id: 'dyn_001',
     type: 'photo',
@@ -131,34 +152,80 @@ const mockDynamics = [
   }
 ]
 
+// 初始化：优先读取本地存储，没有则用默认数据
+const stored = loadFromStorage()
+const initialMembers = stored?.members || defaultMembers
+const initialMemoirs = stored?.memoirs || defaultMemoirs
+const initialMilestones = stored?.milestones || defaultMilestones
+const initialDynamics = stored?.dynamics || defaultDynamics
+
 export const useFamilyStore = defineStore('family', () => {
-  const members = ref(mockFamilyMembers)
-  const memoirs = ref(mockMemoirs)
-  const milestones = ref(mockMilestones)
-  const dynamics = ref(mockDynamics)
+  const members = ref(initialMembers)
+  const memoirs = ref(initialMemoirs)
+  const milestones = ref(initialMilestones)
+  const dynamics = ref(initialDynamics)
   const currentMember = ref(null)
 
-  // 获取成员列表
+  // ============ 持久化函数 ============
+  function persist() {
+    saveToStorage({
+      members: members.value,
+      memoirs: memoirs.value,
+      milestones: milestones.value,
+      dynamics: dynamics.value
+    })
+  }
+
+  // ============ 成员管理 ============
   function getMembers() {
     return members.value
   }
 
-  // 获取成员详情
   function getMemberById(id) {
     return members.value.find(m => m.id === id)
   }
 
-  // 获取回忆录列表
+  function addMember(member) {
+    const newMember = {
+      id: `member_${Date.now()}`,
+      name: member.name,
+      relation: member.relation || '家人',
+      generation: member.generation || 3,
+      avatar: '',
+      birthYear: member.birthYear || '',
+      isAlive: member.isAlive !== false,
+      spouse: member.spouse || '',
+      children: []
+    }
+    members.value.push(newMember)
+    persist()
+    return newMember
+  }
+
+  function updateMember(id, updates) {
+    const idx = members.value.findIndex(m => m.id === id)
+    if (idx > -1) {
+      members.value[idx] = { ...members.value[idx], ...updates }
+      persist()
+      return members.value[idx]
+    }
+    return null
+  }
+
+  function deleteMember(id) {
+    members.value = members.value.filter(m => m.id !== id)
+    persist()
+  }
+
+  // ============ 回忆录管理 ============
   function getMemoirs() {
     return memoirs.value
   }
 
-  // 获取回忆录详情
   function getMemoirById(id) {
     return memoirs.value.find(m => m.id === id)
   }
 
-  // 添加回忆录
   function addMemoir(memoir) {
     const newMemoir = {
       ...memoir,
@@ -167,48 +234,72 @@ export const useFamilyStore = defineStore('family', () => {
       status: 'completed'
     }
     memoirs.value.unshift(newMemoir)
+    persist()
     return newMemoir
   }
 
-  // 获取大事记列表
+  function updateMemoir(id, updates) {
+    const idx = memoirs.value.findIndex(m => m.id === id)
+    if (idx > -1) {
+      memoirs.value[idx] = { ...memoirs.value[idx], ...updates }
+      persist()
+      return memoirs.value[idx]
+    }
+    return null
+  }
+
+  function deleteMemoir(id) {
+    memoirs.value = memoirs.value.filter(m => m.id !== id)
+    persist()
+  }
+
+  // ============ 大事记管理 ============
   function getMilestones() {
     return milestones.value
   }
 
-  // 获取大事记详情
   function getMilestoneById(id) {
     return milestones.value.find(m => m.id === id)
   }
 
-  // 添加大事记
   function addMilestone(milestone) {
     const newMilestone = {
       ...milestone,
       id: `milestone_${Date.now()}`
     }
     milestones.value.unshift(newMilestone)
+    persist()
     return newMilestone
   }
 
-  // 获取动态圈
+  // ============ 动态圈 ============
   function getDynamics() {
     return dynamics.value
   }
 
-  // 获取统计数据
+  // ============ 统计 ============
   function getStats() {
     return {
       totalMembers: members.value.length,
       aliveMembers: members.value.filter(m => m.isAlive).length,
       totalMemoirs: memoirs.value.length,
       totalMilestones: milestones.value.length,
-      totalDuration: memoirs.value.reduce((sum, m) => sum + m.duration, 0)
+      totalDuration: memoirs.value.reduce((sum, m) => sum + (m.duration || 0), 0)
     }
   }
 
-  // 设置当前成员
+  // ============ 当前成员 ============
   function setCurrentMember(member) {
     currentMember.value = member
+  }
+
+  // ============ 重置数据 ============
+  function resetData() {
+    members.value = [...defaultMembers]
+    memoirs.value = [...defaultMemoirs]
+    milestones.value = [...defaultMilestones]
+    dynamics.value = [...defaultDynamics]
+    persist()
   }
 
   return {
@@ -219,14 +310,20 @@ export const useFamilyStore = defineStore('family', () => {
     currentMember,
     getMembers,
     getMemberById,
+    addMember,
+    updateMember,
+    deleteMember,
     getMemoirs,
     getMemoirById,
     addMemoir,
+    updateMemoir,
+    deleteMemoir,
     getMilestones,
     getMilestoneById,
     addMilestone,
     getDynamics,
     getStats,
-    setCurrentMember
+    setCurrentMember,
+    resetData
   }
 })
