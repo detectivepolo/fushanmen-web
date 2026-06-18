@@ -1,84 +1,97 @@
 /**
- * 福善门设计系统变量
- * 严格沿用小程序已有设计规范
+ * 福善门设计系统 v2
+ * 温暖·文学·节制·有生命力
  */
 
 /* 主题色 */
 :root {
-  /* 主色调 */
-  --primary-color: #C48C6F;
-  --primary-light: #D4A68D;
-  --primary-dark: #A67558;
+  /* 主色调 - 温暖的赭石色，如旧书页的暖意 */
+  --primary-color: #B8765A;
+  --primary-light: #D49B7E;
+  --primary-dark: #9B5F44;
+  --primary-soft: #E8D5C4;
+  --primary-bg: #F5EBE0;
   
-  /* 背景色 */
-  --bg-color: #FDF8F5;
-  --bg-color-secondary: #FAF5F2;
+  /* 辅助色 - 沉静的青墨色 */
+  --accent-color: #5C7A6E;
+  --accent-light: #8BA89A;
+  
+  /* 背景色 - 温暖的米白 */
+  --bg-color: #FBF7F2;
+  --bg-color-secondary: #F5EFE8;
   --bg-color-card: #FFFFFF;
+  --bg-color-warm: #F8F1E9;
   
-  /* 文字色 */
-  --text-color-primary: #3D3D3D;
-  --text-color-secondary: #6B6B6B;
-  --text-color-light: #999999;
+  /* 文字色 - 暖灰而非冷黑 */
+  --text-color-primary: #3A2E26;
+  --text-color-secondary: #6B5D52;
+  --text-color-light: #A09388;
   --text-color-white: #FFFFFF;
+  --text-color-gold: #A68B5B;
   
   /* 功能色 */
-  --success-color: #4CAF50;
-  --warning-color: #FF9800;
-  --danger-color: #E53935;
-  --info-color: #2196F3;
+  --success-color: #6B9E6B;
+  --warning-color: #D49B3E;
+  --danger-color: #C75B5B;
+  --info-color: #5C8AAB;
   
   /* 边框色 */
-  --border-color: #E8E0DC;
-  --border-color-light: #F0E8E4;
+  --border-color: #E8DDD0;
+  --border-color-light: #F0E8DC;
+  --border-color-warm: #E0D2C0;
 }
 
-/* 字体大小 - 老年人友好，大字号 */
+/* 字体 - 标题用衬线体增添文学气质，正文用无衬线保证可读性 */
 :root {
+  --font-serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', 'Georgia', serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+  
   --font-size-xs: 12px;
-  --font-size-sm: 14px;
-  --font-size-base: 16px;
-  --font-size-md: 18px;
+  --font-size-sm: 13px;
+  --font-size-base: 15px;
+  --font-size-md: 17px;
   --font-size-lg: 20px;
   --font-size-xl: 24px;
   --font-size-2xl: 28px;
-  --font-size-3xl: 32px;
-  --font-size-4xl: 36px;
+  --font-size-3xl: 34px;
+  --font-size-4xl: 40px;
 }
 
-/* 间距 */
+/* 间距 - 更宽松的呼吸感 */
 :root {
   --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 12px;
   --spacing-base: 16px;
   --spacing-lg: 20px;
-  --spacing-xl: 24px;
-  --spacing-2xl: 32px;
-  --spacing-3xl: 40px;
-  --spacing-4xl: 48px;
+  --spacing-xl: 28px;
+  --spacing-2xl: 36px;
+  --spacing-3xl: 44px;
+  --spacing-4xl: 56px;
 }
 
-/* 圆角 */
+/* 圆角 - 柔和但不失轮廓 */
 :root {
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-2xl: 20px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
   --radius-full: 9999px;
 }
 
-/* 阴影 */
+/* 阴影 - 温暖、柔和、有层次 */
 :root {
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-card: 0 2px 12px rgba(196, 140, 111, 0.15);
-  --shadow-primary: 0 4px 16px rgba(196, 140, 111, 0.3);
+  --shadow-sm: 0 1px 3px rgba(155, 95, 68, 0.06);
+  --shadow-md: 0 2px 10px rgba(155, 95, 68, 0.08);
+  --shadow-lg: 0 6px 20px rgba(155, 95, 68, 0.1);
+  --shadow-xl: 0 10px 30px rgba(155, 95, 68, 0.12);
+  --shadow-card: 0 2px 16px rgba(155, 95, 68, 0.08);
+  --shadow-primary: 0 6px 20px rgba(184, 118, 90, 0.25);
+  --shadow-warm: 0 4px 16px rgba(184, 118, 90, 0.15);
 }
 
-/* z-index层级 */
+/* z-index */
 :root {
   --z-index-base: 1;
   --z-index-dropdown: 100;
@@ -89,7 +102,7 @@
   --z-index-toast: 9999;
 }
 
-/* 按钮样式 */
+/* 按钮 */
 :root {
   --button-height-sm: 36px;
   --button-height-base: 44px;
@@ -97,7 +110,7 @@
   --button-font-size: var(--font-size-md);
 }
 
-/* 图标大小 */
+/* 图标 */
 :root {
   --icon-size-sm: 16px;
   --icon-size-base: 20px;
