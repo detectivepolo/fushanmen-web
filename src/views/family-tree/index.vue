@@ -152,15 +152,21 @@
       </div>
     </van-popup>
 
-    <!-- 成员详情弹窗 -->
-    <van-popup v-model:show="showDetail" round position="bottom" :style="{ padding: '20px' }">
+    <!-- 成员详情 & 编辑弹窗 -->
+    <van-popup v-model:show="showDetail" round position="bottom" :style="{ padding: '20px', maxHeight: '90vh', overflow: 'auto' }">
       <div class="detail-popup" v-if="detailMember">
-        <div class="detail-avatar">
-          {{ detailMember.name.charAt(0) }}
+        <!-- 头部 -->
+        <div class="detail-header">
+          <div class="detail-avatar">
+            {{ detailMember.name.charAt(0) }}
+          </div>
+          <h3>{{ detailMember.name }}</h3>
+          <span class="detail-sub">{{ detailMember.relation }} · 第{{ detailMember.generation }}代</span>
         </div>
-        <h3>{{ detailMember.name }}</h3>
-        <div class="detail-info">
-          <div class="detail-row">
+
+        <!-- 查看模式：展示信息 -->
+        <div class="detail-info" v-if="!isEditing">
+          <div class="detail-row" v-if="detailMember.relation">
             <span class="detail-label">关系</span>
             <span class="detail-value">{{ detailMember.relation }}</span>
           </div>
@@ -178,21 +184,92 @@
           </div>
           <div class="detail-row">
             <span class="detail-label">状态</span>
-            <span class="detail-value">{{ detailMember.isAlive ? '健在' : '故人' }}</span>
-          </div>
-        </div>
-        
-        <!-- 修改姓名 -->
-        <div class="edit-section">
-          <label class="form-label">修改姓名</label>
-          <div class="edit-row">
-            <input v-model="editMemberName" type="text" class="form-input" maxlength="20" />
-            <button class="btn-sm" @click="saveMemberName">保存</button>
+            <span class="detail-value" :class="{ deceased: !detailMember.isAlive }">
+              {{ detailMember.isAlive ? '健在' : '故人' }}
+            </span>
           </div>
         </div>
 
-        <button class="btn-danger" @click="confirmDelete">删除成员</button>
-        <button class="btn-cancel" @click="showDetail = false">关闭</button>
+        <!-- 编辑模式：全部可改 -->
+        <div class="edit-form" v-else>
+          <div class="add-form">
+            <label class="form-label">姓名 <span class="required">*</span></label>
+            <input v-model="editData.name" type="text" class="form-input" maxlength="20" />
+          </div>
+
+          <div class="add-form">
+            <label class="form-label">关系</label>
+            <div class="relation-grid">
+              <span 
+                v-for="rel in relations" 
+                :key="rel"
+                class="relation-option"
+                :class="{ selected: editData.relation === rel }"
+                @click="editData.relation = rel"
+              >
+                {{ rel }}
+              </span>
+            </div>
+          </div>
+
+          <div class="add-form">
+            <label class="form-label">辈分</label>
+            <div class="gen-selector">
+              <button 
+                v-for="g in [1, 2, 3, 4]" 
+                :key="g"
+                class="gen-btn"
+                :class="{ active: editData.generation === g }"
+                @click="editData.generation = g"
+              >
+                第{{ g }}代
+              </button>
+            </div>
+          </div>
+
+          <div class="add-form">
+            <label class="form-label">出生年份</label>
+            <input v-model="editData.birthYear" type="number" class="form-input" placeholder="例如：1990" min="1900" max="2030" />
+          </div>
+
+          <div class="add-form">
+            <label class="form-label">配偶</label>
+            <input v-model="editData.spouse" type="text" class="form-input" placeholder="配偶姓名（可选）" maxlength="20" />
+          </div>
+
+          <div class="add-form">
+            <label class="form-label">是否健在</label>
+            <div class="alive-toggle">
+              <button 
+                class="alive-btn"
+                :class="{ active: editData.isAlive }"
+                @click="editData.isAlive = true"
+              >
+                健在
+              </button>
+              <button 
+                class="alive-btn"
+                :class="{ active: !editData.isAlive }"
+                @click="editData.isAlive = false"
+              >
+                故人
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="detail-actions">
+          <template v-if="!isEditing">
+            <button class="btn-primary btn-block" @click="startEdit">✏️ 修改信息</button>
+            <button class="btn-danger" @click="confirmDelete">删除成员</button>
+            <button class="btn-cancel" @click="showDetail = false">关闭</button>
+          </template>
+          <template v-else>
+            <button class="btn-primary btn-block" @click="saveEdit">💾 保存修改</button>
+            <button class="btn-cancel" @click="cancelEdit">取消</button>
+          </template>
+        </div>
       </div>
     </van-popup>
   </div>
@@ -222,7 +299,7 @@ function getMembersByGeneration(gen) {
 
 function showMemberDetail(member) {
   detailMember.value = member
-  editMemberName.value = member.name
+  isEditing.value = false
   showDetail.value = true
 }
 
@@ -268,18 +345,45 @@ function addMember() {
   showToast('添加成功')
 }
 
-// ============ 成员详情 & 修改 ============
+// ============ 成员详情 & 编辑 ============
 const showDetail = ref(false)
 const detailMember = ref(null)
-const editMemberName = ref('')
+const isEditing = ref(false)
+const editData = ref({})
 
-function saveMemberName() {
-  if (!editMemberName.value.trim()) {
+function startEdit() {
+  const m = detailMember.value
+  editData.value = {
+    name: m.name,
+    relation: m.relation,
+    generation: m.generation,
+    birthYear: m.birthYear || '',
+    spouse: m.spouse || '',
+    isAlive: m.isAlive
+  }
+  isEditing.value = true
+}
+
+function cancelEdit() {
+  isEditing.value = false
+}
+
+function saveEdit() {
+  if (!editData.value.name.trim()) {
     showToast('请输入姓名')
     return
   }
-  familyStore.updateMember(detailMember.value.id, { name: editMemberName.value.trim() })
+  familyStore.updateMember(detailMember.value.id, {
+    name: editData.value.name.trim(),
+    relation: editData.value.relation,
+    generation: editData.value.generation,
+    birthYear: editData.value.birthYear ? parseInt(editData.value.birthYear) : '',
+    spouse: editData.value.spouse.trim(),
+    isAlive: editData.value.isAlive
+  })
+  // 刷新当前详情
   detailMember.value = familyStore.getMemberById(detailMember.value.id)
+  isEditing.value = false
   showToast('修改成功')
 }
 
@@ -504,7 +608,7 @@ function confirmDelete() {
   color: var(--text-color-light);
 }
 
-/* 弹窗样式 */
+/* 弹窗通用 */
 .add-popup {
   text-align: center;
 }
@@ -647,6 +751,10 @@ function confirmDelete() {
   text-align: center;
 }
 
+.detail-header {
+  margin-bottom: var(--spacing-lg);
+}
+
 .detail-avatar {
   width: 64px;
   height: 64px;
@@ -662,10 +770,16 @@ function confirmDelete() {
 }
 
 .detail-popup h3 {
+  font-family: var(--font-serif);
   font-size: var(--font-size-xl);
   font-weight: 600;
   color: var(--text-color-primary);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 4px;
+}
+
+.detail-sub {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-light);
 }
 
 .detail-info {
@@ -691,37 +805,25 @@ function confirmDelete() {
   font-weight: 500;
 }
 
-.edit-section {
+.detail-value.deceased {
+  color: var(--text-color-light);
+}
+
+/* 编辑表单 */
+.edit-form {
   text-align: left;
   margin-bottom: var(--spacing-lg);
-  padding-top: var(--spacing-base);
-  border-top: 1px solid var(--border-color-light);
 }
 
-.edit-row {
-  display: flex;
-  gap: var(--spacing-sm);
-}
-
-.edit-row .form-input {
-  flex: 1;
-}
-
-.btn-sm {
-  padding: var(--spacing-sm) var(--spacing-base);
-  background: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  white-space: nowrap;
+/* 操作按钮 */
+.detail-actions {
+  margin-top: var(--spacing-base);
 }
 
 .btn-danger {
   display: block;
   width: 100%;
-  margin-bottom: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
   padding: var(--spacing-base);
   background: transparent;
   border: 1px solid var(--danger-color);
