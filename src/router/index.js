@@ -50,6 +50,12 @@ const routes = [
     meta: { title: '合集回忆录' }
   },
   {
+    path: '/memoir-combined',
+    name: 'MemoirCombined',
+    component: () => import('@/views/memoir/combined.vue'),
+    meta: { title: '完整回忆录' }
+  },
+  {
     path: '/milestone',
     name: 'Milestone',
     component: () => import('@/views/milestone/index.vue'),
