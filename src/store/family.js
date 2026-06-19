@@ -37,6 +37,32 @@ function saveToStorage(data) {
   }
 }
 
+// ============ Mock AI 润色 ============
+// 模拟AI将录音转成润色文本，接入真实AI服务后替换此函数
+function mockAIPolish({ title, protagonistName, duration, tags, createdAt }) {
+  const now = new Date()
+  const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`
+  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+  const mins = Math.floor((duration || 0) / 60)
+  const secs = (duration || 0) % 60
+  const durStr = mins > 0 ? `${mins}分${secs}秒` : `${secs}秒`
+
+  const tagStr = tags && tags.length > 0 ? tags.join('、') : '生活'
+
+  return `## ${title}
+
+📅 录制于 ${dateStr} ${timeStr} · 时长 ${durStr}
+
+这是关于${protagonistName}的一段珍贵回忆。讲述者用声音记录下了那些难忘的时光，经过AI润色后，整理为以下文字：
+
+${protagonistName}的这段记忆，带着岁月的温度。那些关于${tagStr}的往事，在娓娓道来中重新鲜活起来。每一个细节都是家族历史的拼图，每一次回忆都是对过往的致敬。
+
+（此文本为AI自动润色的预览效果，接入语音转文字服务后，将根据录音内容生成真实文本。）
+
+🏷️ 关键词：${tagStr}
+🎙️ 讲述：${protagonistName}`
+}
+
 // ============ 默认 Mock 数据 ============
 const defaultMembers = [
   {
@@ -105,7 +131,18 @@ const defaultMemoirs = [
     author: { id: 'member_001', name: '赵德福' },
     protagonist: { id: 'member_001', name: '赵德福' },
     tags: ['童年', '往事'],
-    status: 'completed'
+    status: 'completed',
+    transcript: `## 爷爷的童年回忆
+
+📅 录制于 2024年1月15日 10:30 · 时长 2分5秒
+
+赵德福爷爷的童年记忆，带着岁月的温度。那些关于童年的往事，在娓娓道来中重新鲜活起来。
+
+爷爷出生在1945年，那是一个物质匮乏但人情浓厚的年代。他回忆起小时候在村里跑着玩耍的日子，和小伙伴们一起捉蛐蛐、放牛、在田埂上吹风。虽然生活清苦，但童年无忧无虑。
+
+🏷️ 关键词：童年、往事
+🎙️ 讲述：赵德福`,
+    merged: true
   },
   {
     id: 'memoir_002',
@@ -117,7 +154,18 @@ const defaultMemoirs = [
     author: { id: 'member_002', name: '赵建国' },
     protagonist: { id: 'member_002', name: '赵建国' },
     tags: ['趣事', '成长'],
-    status: 'completed'
+    status: 'completed',
+    transcript: `## 爸爸第一次学骑自行车
+
+📅 录制于 2024年1月14日 15:20 · 时长 1分26秒
+
+赵建国爸爸回忆起自己第一次学骑自行车的趣事。
+
+那是一辆老旧的二八大杠自行车，爸爸个子还不够高，只能斜着身子够脚蹬子。爷爷在后面扶着车座，说"别怕，骑就行了"。结果一松手，爸爸就摔进了路边的沟里。虽然摔破了膝盖，但那天下午，他终于学会了骑车。
+
+🏷️ 关键词：趣事、成长
+🎙️ 讲述：赵建国`,
+    merged: true
   }
 ]
 
@@ -240,20 +288,84 @@ export const useFamilyStore = defineStore('family', () => {
     return memoirs.value
   }
 
+  // 按主角分组
+  function getMemoirsByProtagonist() {
+    const groups = {}
+    memoirs.value.forEach(m => {
+      const pid = m.protagonist?.id || 'unknown'
+      if (!groups[pid]) {
+        groups[pid] = {
+          protagonist: m.protagonist,
+          memoirs: []
+        }
+      }
+      groups[pid].memoirs.push(m)
+    })
+    return Object.values(groups)
+  }
+
+  function getMemoirsByMemberId(memberId) {
+    return memoirs.value.filter(m => m.protagonist?.id === memberId)
+  }
+
   function getMemoirById(id) {
     return memoirs.value.find(m => m.id === id)
   }
 
   function addMemoir(memoir) {
+    const now = new Date()
+    const createdAt = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`
+
+    // 生成AI润色文本（Mock）
+    const transcript = mockAIPolish({
+      title: memoir.title,
+      protagonistName: memoir.protagonist?.name || '家人',
+      duration: memoir.duration,
+      tags: memoir.tags,
+      createdAt
+    })
+
     const newMemoir = {
       ...memoir,
       id: `memoir_${Date.now()}`,
-      createdAt: new Date().toLocaleString('zh-CN'),
-      status: 'completed'
+      createdAt,
+      status: 'completed',
+      transcript,
+      merged: false  // 默认不整合，由用户选择
     }
     memoirs.value.unshift(newMemoir)
     persist()
     return newMemoir
+  }
+
+  // 整合一条回忆录到主角的完整回忆录中
+  function mergeMemoir(memoirId) {
+    const idx = memoirs.value.findIndex(m => m.id === memoirId)
+    if (idx > -1) {
+      memoirs.value[idx].merged = true
+      persist()
+      return memoirs.value[idx]
+    }
+    return null
+  }
+
+  // 获取某人的完整回忆录（所有已整合的段落拼接）
+  function getCombinedMemoir(protagonistId) {
+    const merged = memoirs.value
+      .filter(m => m.protagonist?.id === protagonistId && m.merged)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+
+    if (merged.length === 0) return null
+
+    const protagonist = merged[0].protagonist
+    const segments = merged.map(m => m.transcript || '').join('\n\n---\n\n')
+
+    return {
+      protagonist,
+      segments: merged,
+      combinedText: segments,
+      count: merged.length
+    }
   }
 
   function updateMemoir(id, updates) {
@@ -354,8 +466,12 @@ export const useFamilyStore = defineStore('family', () => {
     updateMember,
     deleteMember,
     getMemoirs,
+    getMemoirsByProtagonist,
+    getMemoirsByMemberId,
     getMemoirById,
     addMemoir,
+    mergeMemoir,
+    getCombinedMemoir,
     updateMemoir,
     deleteMemoir,
     getMilestones,
