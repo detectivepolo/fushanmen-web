@@ -3,7 +3,7 @@
     <header class="page-header" @click="goBack">
       <span class="back-btn">‹</span>
       <h1>录制回忆</h1>
-      <span class="step-indicator">步骤 {{ currentStep }}/4</span>
+      <span class="step-indicator">{{ currentStep }}/5</span>
     </header>
 
     <div class="page-content">
@@ -133,10 +133,67 @@
         <button 
           class="btn-primary btn-block mt-xl"
           :disabled="!title.trim()"
-          @click="submitMemoir"
+          @click="generatePreview"
         >
-          完成录制
+          AI润色预览
         </button>
+      </div>
+
+      <!-- 步骤5：AI润色预览 + 整合选择 -->
+      <div v-show="currentStep === 5" class="step-content fade-in">
+        <div class="step-title">
+          <span class="step-icon">🤖</span>
+          <span>AI润色预览</span>
+        </div>
+
+        <div class="ai-loading" v-if="aiLoading">
+          <div class="loading-spinner"></div>
+          <p>AI正在整理这段回忆...</p>
+        </div>
+
+        <template v-else>
+          <!-- AI润色文本预览 -->
+          <div class="transcript-preview">
+            <div class="transcript-text" v-html="renderedTranscript"></div>
+          </div>
+
+          <!-- 整合选择 -->
+          <div class="merge-choice">
+            <div class="merge-question">
+              <span class="merge-icon">📝</span>
+              <span>是否将本段整合到{{ selectedProtagonist?.name }}的完整回忆录？</span>
+            </div>
+            <div class="merge-options">
+              <button 
+                class="merge-btn merge-yes"
+                :class="{ active: mergeChoice === true }"
+                @click="mergeChoice = true"
+              >
+                ✓ 整合
+              </button>
+              <button 
+                class="merge-btn merge-no"
+                :class="{ active: mergeChoice === false }"
+                @click="mergeChoice = false"
+              >
+                ✗ 不整合
+              </button>
+            </div>
+            <p class="merge-hint" v-if="mergeChoice === true">
+              本段文字将拼接到{{ selectedProtagonist?.name }}的完整回忆录末尾
+            </p>
+            <p class="merge-hint" v-else-if="mergeChoice === false">
+              保留为独立段落，不合并到完整回忆录
+            </p>
+          </div>
+
+          <button 
+            class="btn-primary btn-block mt-xl"
+            @click="submitMemoir"
+          >
+            完成录制
+          </button>
+        </template>
       </div>
 
       <!-- 成功提示 -->
@@ -144,10 +201,16 @@
         <div class="success-content">
           <span class="success-icon">🎉</span>
           <h2>回忆录制成功！</h2>
-          <p>您的回忆已保存到家族记忆中</p>
-          <button class="btn-primary mt-lg" @click="goToHome">
-            返回首页
-          </button>
+          <p v-if="mergeChoice">已整合到{{ selectedProtagonist?.name }}的完整回忆录</p>
+          <p v-else>已保存为独立段落</p>
+          <div class="success-actions">
+            <button class="btn-primary mt-lg" @click="goToDetail">
+              查看回忆
+            </button>
+            <button class="btn-text mt-sm" @click="goToHome">
+              返回首页
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -176,10 +239,30 @@ const photos = ref([])
 const title = ref('')
 const selectedTags = ref([])
 const submitted = ref(false)
+const savedMemoirId = ref('')
+
+// 步骤5新增
+const aiLoading = ref(false)
+const transcript = ref('')
+const mergeChoice = ref(null)
 
 const members = computed(() => familyStore.getMembers())
 
 const availableTags = ['童年', '成长', '趣事', '家庭', '工作', '爱情', '旅行', '节日']
+
+// 渲染transcript为HTML（简单markdown转换）
+const renderedTranscript = computed(() => {
+  if (!transcript.value) return ''
+  return transcript.value
+    .replace(/^## (.+)$/gm, '<h3 class="tr-h3">$1</h3>')
+    .replace(/^📅 (.+)$/gm, '<p class="tr-date">📅 $1</p>')
+    .replace(/^🏷️ (.+)$/gm, '<p class="tr-tag">🏷️ $1</p>')
+    .replace(/^🎙️ (.+)$/gm, '<p class="tr-narrator">🎙️ $1</p>')
+    .replace(/^---$/gm, '<hr class="tr-divider">')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(?!<)/gm, '<p>')
+    .replace(/(?<!>)$/, '</p>')
+})
 
 function goBack() {
   if (currentStep.value > 1) {
@@ -220,11 +303,24 @@ function toggleTag(tag) {
   }
 }
 
+// 生成AI润色预览
+function generatePreview() {
+  currentStep.value = 5
+  aiLoading.value = true
+  transcript.value = ''
+  mergeChoice.value = null
+
+  // 模拟AI处理延迟
+  setTimeout(() => {
+    aiLoading.value = false
+  }, 1500)
+}
+
 function submitMemoir() {
   const memoir = familyStore.addMemoir({
     title: title.value,
     audioUrl: audioUrl.value,
-    duration: audioBlob.value ? Math.round(audioBlob.value.size / 1000) : 0,
+    duration: audioBlob.value ? Math.round(audioBlob.value.size / 1024) : 0,
     photos: photos.value,
     author: {
       id: userStore.userInfo.id,
@@ -236,8 +332,21 @@ function submitMemoir() {
     },
     tags: selectedTags.value
   })
-  
+
+  // 读取store生成的transcript
+  transcript.value = memoir.transcript
+
+  // 根据用户选择决定是否整合
+  if (mergeChoice.value === true) {
+    familyStore.mergeMemoir(memoir.id)
+  }
+
+  savedMemoirId.value = memoir.id
   submitted.value = true
+}
+
+function goToDetail() {
+  router.replace({ path: '/memoir-detail', query: { id: savedMemoirId.value } })
 }
 
 function goToHome() {
@@ -289,7 +398,7 @@ function goToHome() {
 
 .member-option.selected {
   border-color: var(--primary-color);
-  background: rgba(196, 140, 111, 0.1);
+  background: rgba(184, 118, 90, 0.1);
 }
 
 .option-avatar {
@@ -414,6 +523,137 @@ function goToHome() {
   cursor: not-allowed;
 }
 
+/* ====== AI润色预览 ====== */
+.ai-loading {
+  text-align: center;
+  padding: var(--spacing-2xl) 0;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border-color-warm);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  margin: 0 auto var(--spacing-base);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-loading p {
+  font-size: var(--font-size-base);
+  color: var(--text-color-secondary);
+}
+
+.transcript-preview {
+  background: var(--bg-color-card);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-card);
+  margin-bottom: var(--spacing-lg);
+  border-left: 3px solid var(--primary-soft);
+}
+
+.transcript-text {
+  font-size: var(--font-size-sm);
+  line-height: 1.8;
+  color: var(--text-color-primary);
+}
+
+:deep(.tr-h3) {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--primary-color);
+  margin-bottom: var(--spacing-sm);
+}
+
+:deep(.tr-date) {
+  font-size: var(--font-size-xs);
+  color: var(--text-color-light);
+  margin-bottom: var(--spacing-sm);
+}
+
+:deep(.tr-tag),
+:deep(.tr-narrator) {
+  font-size: var(--font-size-xs);
+  color: var(--text-color-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+:deep(.tr-divider) {
+  border: none;
+  border-top: 1px dashed var(--border-color-warm);
+  margin: var(--spacing-base) 0;
+}
+
+/* ====== 整合选择 ====== */
+.merge-choice {
+  background: var(--bg-color-warm);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.merge-question {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--text-color-primary);
+  margin-bottom: var(--spacing-base);
+}
+
+.merge-icon {
+  font-size: 20px;
+}
+
+.merge-options {
+  display: flex;
+  gap: var(--spacing-base);
+}
+
+.merge-btn {
+  flex: 1;
+  padding: var(--spacing-base);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-color-card);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.merge-btn.active {
+  border-color: var(--primary-color);
+}
+
+.merge-yes.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.merge-no.active {
+  background: var(--bg-color-secondary);
+  color: var(--text-color-primary);
+  border-color: var(--text-color-secondary);
+}
+
+.merge-hint {
+  font-size: var(--font-size-sm);
+  color: var(--text-color-secondary);
+  margin-top: var(--spacing-sm);
+  text-align: center;
+}
+
+/* ====== 成功提示 ====== */
 .success-overlay {
   position: fixed;
   top: 0;
@@ -448,5 +688,30 @@ function goToHome() {
 .success-content p {
   font-size: var(--font-size-base);
   color: var(--text-color-secondary);
+}
+
+.success-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: var(--text-color-light);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  padding: var(--spacing-sm);
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
