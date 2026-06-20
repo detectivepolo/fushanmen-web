@@ -5,8 +5,7 @@
         <h1>家族树</h1>
         <span class="add-btn" @click="openAddMember">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
           添加
         </span>
@@ -14,54 +13,49 @@
     </header>
 
     <div class="page-content">
-      <div class="generations-list">
-        <div
-          v-for="gen in generations"
-          :key="gen"
-          class="generation-section"
-        >
-          <div class="gen-header">
-            <span class="gen-num">{{ toChineseNum(gen) }}</span>
-            <span class="gen-text">第{{ toChineseNum(gen) }}代</span>
-            <span class="gen-count">{{ getMembersByGeneration(gen).length }}人</span>
-          </div>
-          <div class="gen-members">
-            <div
-              v-for="member in getMembersByGeneration(gen)"
-              :key="member.id"
-              class="member-card"
-              :class="{ 'is-me': isMe(member) }"
-              @click="showMemberDetail(member)"
-            >
-              <div class="member-avatar" :class="{ deceased: !member.isAlive }" :style="member.avatar ? { backgroundImage: `url(${member.avatar})` } : {}">
-                <span v-if="!member.avatar">{{ member.name.charAt(0) }}</span>
+      <div class="tree-scroll">
+        <div class="tree-container">
+          <div
+            v-for="node in flatTree"
+            :key="node.member.id"
+            class="tree-node-wrapper"
+            :style="{ paddingLeft: node.depth * 24 + 'px' }"
+          >
+            <span
+              v-for="d in node.depth"
+              :key="d"
+              class="tree-indent"
+              :class="{ 'indent-empty': node.ancestorIsLast[d - 1] }"
+            ></span>
+            <div class="tree-node" :class="{ 'is-me': isMe(node.member) }" @click="showMemberDetail(node.member)">
+              <span class="node-connector" v-if="node.depth > 0"></span>
+              <div class="node-avatar" :class="{ deceased: !node.member.isAlive }" :style="node.member.avatar ? { backgroundImage: `url(${node.member.avatar})` } : {}">
+                <span v-if="!node.member.avatar">{{ node.member.name.charAt(0) }}</span>
               </div>
-              <div class="member-info">
-                <div class="member-name-row">
-                  <span class="member-name">{{ member.name }}</span>
-                  <span v-if="isMe(member)" class="me-tag">我</span>
-                  <span v-if="!member.isAlive" class="deceased-tag">故</span>
+              <div class="node-info">
+                <div class="node-name-row">
+                  <span class="node-name">{{ node.member.name }}</span>
+                  <span v-if="isMe(node.member)" class="me-tag">我</span>
+                  <span v-if="!node.member.isAlive" class="deceased-tag">故</span>
                 </div>
-                <div class="member-meta">
-                  <span v-if="member.birthYear">{{ member.birthYear }}年生</span>
-                  <span v-if="member.spouse">配偶：{{ member.spouse }}</span>
-                  <span v-if="getMemoirCount(member.id) > 0" class="memoir-badge">{{ getMemoirCount(member.id) }}段回忆</span>
+                <div class="node-meta">
+                  <span v-if="node.member.birthYear">{{ node.member.birthYear }}年生</span>
+                  <span v-if="node.member.spouse">· 配偶 {{ node.member.spouse }}</span>
                 </div>
               </div>
-              <svg class="member-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18">
+              <svg class="node-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="add-generation" @click="addNewGeneration">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span>添加第{{ toChineseNum(maxGeneration + 1) }}代</span>
-        </div>
+      <div class="add-generation" @click="addNewGeneration">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="16" height="16">
+          <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        <span>添加第{{ toChineseNum(maxGeneration + 1) }}代</span>
       </div>
     </div>
 
@@ -69,45 +63,19 @@
     <van-popup v-model:show="showAddMember" round position="bottom" :style="{ padding: '20px', maxHeight: '85vh', overflow: 'auto' }">
       <div class="add-popup">
         <h3>添加家族成员</h3>
-
-        <!-- 照片上传 -->
         <div class="photo-upload-area" @click="triggerPhotoUpload">
           <div v-if="newMember.avatar" class="photo-preview" :style="{ backgroundImage: `url(${newMember.avatar})` }"></div>
           <div v-else class="photo-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
             <span>添加照片</span>
           </div>
         </div>
         <input ref="photoInput" type="file" accept="image/*" @change="onPhotoSelected" style="display:none" />
-
-        <div class="add-form">
-          <label class="form-label">姓名 <span class="required">*</span></label>
-          <input v-model="newMember.name" type="text" class="form-input" placeholder="请输入姓名" maxlength="20" />
-        </div>
-        <div class="add-form">
-          <label class="form-label">第几代</label>
-          <div class="gen-selector">
-            <button v-for="g in genOptions" :key="g" class="gen-btn" :class="{ active: newMember.generation === g }" @click="newMember.generation = g">第{{ toChineseNum(g) }}代</button>
-          </div>
-        </div>
-        <div class="add-form">
-          <label class="form-label">出生年份</label>
-          <input v-model="newMember.birthYear" type="number" class="form-input" placeholder="例如：1990" min="1900" max="2030" />
-        </div>
-        <div class="add-form">
-          <label class="form-label">配偶</label>
-          <input v-model="newMember.spouse" type="text" class="form-input" placeholder="配偶姓名（可选）" maxlength="20" />
-        </div>
-        <div class="add-form">
-          <label class="form-label">是否健在</label>
-          <div class="alive-toggle">
-            <button class="alive-btn" :class="{ active: newMember.isAlive }" @click="newMember.isAlive = true">健在</button>
-            <button class="alive-btn" :class="{ active: !newMember.isAlive }" @click="newMember.isAlive = false">故人</button>
-          </div>
-        </div>
+        <div class="add-form"><label class="form-label">姓名 <span class="required">*</span></label><input v-model="newMember.name" type="text" class="form-input" placeholder="请输入姓名" maxlength="20" /></div>
+        <div class="add-form"><label class="form-label">第几代</label><div class="gen-selector"><button v-for="g in genOptions" :key="g" class="gen-btn" :class="{ active: newMember.generation === g }" @click="newMember.generation = g">第{{ toChineseNum(g) }}代</button></div></div>
+        <div class="add-form"><label class="form-label">出生年份</label><input v-model="newMember.birthYear" type="number" class="form-input" placeholder="例如：1990" min="1900" max="2030" /></div>
+        <div class="add-form"><label class="form-label">配偶</label><input v-model="newMember.spouse" type="text" class="form-input" placeholder="配偶姓名（可选）" maxlength="20" /></div>
+        <div class="add-form"><label class="form-label">是否健在</label><div class="alive-toggle"><button class="alive-btn" :class="{ active: newMember.isAlive }" @click="newMember.isAlive = true">健在</button><button class="alive-btn" :class="{ active: !newMember.isAlive }" @click="newMember.isAlive = false">故人</button></div></div>
         <button class="btn-primary btn-block" @click="addMember">确认添加</button>
         <button class="btn-cancel" @click="showAddMember = false">取消</button>
       </div>
@@ -124,57 +92,33 @@
           <span class="detail-sub">第{{ toChineseNum(detailMember.generation) }}代<span v-if="isMe(detailMember)"> · 我</span></span>
         </div>
 
-        <!-- 查看模式 -->
         <div class="detail-info" v-if="!isEditing">
           <div class="detail-row" v-if="detailMember.birthYear"><span class="detail-label">出生年份</span><span class="detail-value">{{ detailMember.birthYear }}年</span></div>
           <div class="detail-row" v-if="detailMember.spouse"><span class="detail-label">配偶</span><span class="detail-value">{{ detailMember.spouse }}</span></div>
           <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value" :class="{ deceased: !detailMember.isAlive }">{{ detailMember.isAlive ? '健在' : '故人' }}</span></div>
         </div>
 
-        <!-- 编辑模式 -->
         <div class="edit-form" v-else>
           <div class="photo-upload-area compact" @click="triggerEditPhotoUpload">
             <div v-if="editData.avatar" class="photo-preview" :style="{ backgroundImage: `url(${editData.avatar})` }"></div>
             <div v-else class="photo-placeholder">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="24" height="24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
               <span>更换照片</span>
             </div>
           </div>
           <input ref="editPhotoInput" type="file" accept="image/*" @change="onEditPhotoSelected" style="display:none" />
-          <div class="add-form">
-            <label class="form-label">姓名 <span class="required">*</span></label>
-            <input v-model="editData.name" type="text" class="form-input" maxlength="20" />
-          </div>
-          <div class="add-form">
-            <label class="form-label">第几代</label>
-            <div class="gen-selector">
-              <button v-for="g in genOptions" :key="g" class="gen-btn" :class="{ active: editData.generation === g }" @click="editData.generation = g">第{{ toChineseNum(g) }}代</button>
-            </div>
-          </div>
-          <div class="add-form">
-            <label class="form-label">出生年份</label>
-            <input v-model="editData.birthYear" type="number" class="form-input" placeholder="例如：1990" min="1900" max="2030" />
-          </div>
-          <div class="add-form">
-            <label class="form-label">配偶</label>
-            <input v-model="editData.spouse" type="text" class="form-input" placeholder="配偶姓名（可选）" maxlength="20" />
-          </div>
-          <div class="add-form">
-            <label class="form-label">是否健在</label>
-            <div class="alive-toggle">
-              <button class="alive-btn" :class="{ active: editData.isAlive }" @click="editData.isAlive = true">健在</button>
-              <button class="alive-btn" :class="{ active: !editData.isAlive }" @click="editData.isAlive = false">故人</button>
-            </div>
-          </div>
+          <div class="add-form"><label class="form-label">姓名 <span class="required">*</span></label><input v-model="editData.name" type="text" class="form-input" maxlength="20" /></div>
+          <div class="add-form"><label class="form-label">第几代</label><div class="gen-selector"><button v-for="g in genOptions" :key="g" class="gen-btn" :class="{ active: editData.generation === g }" @click="editData.generation = g">第{{ toChineseNum(g) }}代</button></div></div>
+          <div class="add-form"><label class="form-label">出生年份</label><input v-model="editData.birthYear" type="number" class="form-input" placeholder="例如：1990" min="1900" max="2030" /></div>
+          <div class="add-form"><label class="form-label">配偶</label><input v-model="editData.spouse" type="text" class="form-input" placeholder="配偶姓名（可选）" maxlength="20" /></div>
+          <div class="add-form"><label class="form-label">是否健在</label><div class="alive-toggle"><button class="alive-btn" :class="{ active: editData.isAlive }" @click="editData.isAlive = true">健在</button><button class="alive-btn" :class="{ active: !editData.isAlive }" @click="editData.isAlive = false">故人</button></div></div>
         </div>
 
         <div class="detail-actions">
           <template v-if="!isEditing">
-            <button v-if="getMemoirCount(detailMember.id) > 0" class="btn-memoir" @click="goToMemoirs">查看{{ detailMember.name }}的回忆录（{{ getMemoirCount(detailMember.id) }}段）</button>
-            <button class="btn-record" @click="goRecordForMember">为{{ detailMember.name }}录制回忆</button>
+            <!-- 看此人被谁写过 -->
+            <button v-if="perspectiveCount(detailMember.id) > 0" class="btn-memoir" @click="goToPerspective">「我眼中的{{ detailMember.name }}」（{{ perspectiveCount(detailMember.id) }}篇）</button>
+            <button class="btn-record" @click="goWritePerspective">写「我眼中的{{ detailMember.name }}」</button>
             <button class="btn-primary btn-block" @click="startEdit">修改信息</button>
             <button class="btn-danger" @click="confirmDelete">删除成员</button>
             <button class="btn-cancel" @click="showDetail = false">关闭</button>
@@ -211,13 +155,47 @@ function toChineseNum(n) {
   return String(n)
 }
 
-const generations = computed(() => [...new Set(members.value.map(m => m.generation))].sort((a,b) => a-b))
-const maxGeneration = computed(() => Math.max(...generations.value, 0))
-const genOptions = computed(() => { const a=[]; for(let i=1;i<=maxGeneration.value+1;i++) a.push(i); return a })
+const maxGeneration = computed(() => {
+  const gens = members.value.map(m => m.generation).filter(g => g != null)
+  return gens.length > 0 ? Math.max(...gens) : 0
+})
+const genOptions = computed(() => { const a = []; for (let i = 1; i <= maxGeneration.value + 1; i++) a.push(i); return a })
 
-function getMembersByGeneration(gen) { return members.value.filter(m => m.generation === gen) }
+// ===== 树形结构，按出生年月排序 =====
+const flatTree = computed(() => {
+  const result = []
+  const allChildIds = members.value.flatMap(m => m.children || [])
+  let roots = members.value.filter(m => !allChildIds.includes(m.id))
+  if (roots.length === 0) {
+    const minGen = Math.min(...members.value.map(m => m.generation || 1))
+    roots = members.value.filter(m => (m.generation || 1) === minGen)
+  }
+  roots.sort((a, b) => (a.birthYear || 9999) - (b.birthYear || 9999))
+
+  function traverse(member, depth, isLast, ancestorIsLast) {
+    result.push({ member, depth, isLast, ancestorIsLast: [...ancestorIsLast] })
+    const children = (member.children || [])
+      .map(id => members.value.find(m => m.id === id))
+      .filter(Boolean)
+      .sort((a, b) => (a.birthYear || 9999) - (b.birthYear || 9999))
+    children.forEach((child, i) => {
+      traverse(child, depth + 1, i === children.length - 1, [...ancestorIsLast, isLast])
+    })
+  }
+  roots.forEach((root, i) => traverse(root, 0, i === roots.length - 1, []))
+
+  // 孤立成员
+  const inTree = new Set(result.map(r => r.member.id))
+  members.value
+    .filter(m => !inTree.has(m.id))
+    .sort((a, b) => (a.birthYear || 9999) - (b.birthYear || 9999))
+    .forEach(m => result.push({ member: m, depth: 0, isLast: true, ancestorIsLast: [] }))
+
+  return result
+})
+
 function isMe(member) { return userStore.isLoggedIn && member.name === userStore.userInfo.name }
-function getMemoirCount(id) { return familyStore.getMemoirsByMemberId(id).length }
+function perspectiveCount(memberId) { return familyStore.getPerspectiveMemoirs(memberId).length }
 
 function showMemberDetail(member) {
   detailMember.value = member
@@ -228,7 +206,6 @@ function showMemberDetail(member) {
 // ===== 照片上传 =====
 const photoInput = ref(null)
 const editPhotoInput = ref(null)
-
 function triggerPhotoUpload() { photoInput.value?.click() }
 function triggerEditPhotoUpload() { editPhotoInput.value?.click() }
 
@@ -240,58 +217,28 @@ function compressImage(file, callback) {
       const canvas = document.createElement('canvas')
       const maxSize = 400
       let w = img.width, h = img.height
-      if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize } } 
+      if (w > h) { if (w > maxSize) { h = h * maxSize / w; w = maxSize } }
       else { if (h > maxSize) { w = w * maxSize / h; h = maxSize } }
       canvas.width = w; canvas.height = h
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(img, 0, 0, w, h)
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
       callback(canvas.toDataURL('image/jpeg', 0.7))
     }
     img.src = e.target.result
   }
   reader.readAsDataURL(file)
 }
-
-function onPhotoSelected(e) {
-  const file = e.target.files[0]
-  if (!file) return
-  compressImage(file, (dataUrl) => { newMember.value.avatar = dataUrl })
-  e.target.value = ''
-}
-
-function onEditPhotoSelected(e) {
-  const file = e.target.files[0]
-  if (!file) return
-  compressImage(file, (dataUrl) => { editData.value.avatar = dataUrl })
-  e.target.value = ''
-}
+function onPhotoSelected(e) { const f = e.target.files[0]; if (!f) return; compressImage(f, d => newMember.value.avatar = d); e.target.value = '' }
+function onEditPhotoSelected(e) { const f = e.target.files[0]; if (!f) return; compressImage(f, d => editData.value.avatar = d); e.target.value = '' }
 
 // ===== 添加成员 =====
 const showAddMember = ref(false)
 const newMember = ref({ name: '', generation: 1, birthYear: '', spouse: '', isAlive: true, avatar: '' })
-
-function openAddMember() {
-  newMember.value = { name: '', generation: 1, birthYear: '', spouse: '', isAlive: true, avatar: '' }
-  showAddMember.value = true
-}
-
-function addNewGeneration() {
-  newMember.value = { name: '', generation: maxGeneration.value + 1, birthYear: '', spouse: '', isAlive: true, avatar: '' }
-  showAddMember.value = true
-}
-
+function openAddMember() { newMember.value = { name: '', generation: 1, birthYear: '', spouse: '', isAlive: true, avatar: '' }; showAddMember.value = true }
+function addNewGeneration() { newMember.value = { name: '', generation: maxGeneration.value + 1, birthYear: '', spouse: '', isAlive: true, avatar: '' }; showAddMember.value = true }
 function addMember() {
   if (!newMember.value.name.trim()) { showToast('请输入姓名'); return }
-  familyStore.addMember({
-    name: newMember.value.name.trim(),
-    generation: newMember.value.generation,
-    birthYear: newMember.value.birthYear ? parseInt(newMember.value.birthYear) : '',
-    spouse: newMember.value.spouse.trim(),
-    isAlive: newMember.value.isAlive,
-    avatar: newMember.value.avatar
-  })
-  showAddMember.value = false
-  showToast('添加成功')
+  familyStore.addMember({ name: newMember.value.name.trim(), generation: newMember.value.generation, birthYear: newMember.value.birthYear ? parseInt(newMember.value.birthYear) : '', spouse: newMember.value.spouse.trim(), isAlive: newMember.value.isAlive, avatar: newMember.value.avatar })
+  showAddMember.value = false; showToast('添加成功')
 }
 
 // ===== 详情 & 编辑 =====
@@ -299,34 +246,30 @@ const showDetail = ref(false)
 const detailMember = ref(null)
 const isEditing = ref(false)
 const editData = ref({})
-
-function startEdit() {
-  const m = detailMember.value
-  editData.value = { name: m.name, generation: m.generation, birthYear: m.birthYear || '', spouse: m.spouse || '', isAlive: m.isAlive, avatar: m.avatar || '' }
-  isEditing.value = true
-}
+function startEdit() { const m = detailMember.value; editData.value = { name: m.name, generation: m.generation, birthYear: m.birthYear || '', spouse: m.spouse || '', isAlive: m.isAlive, avatar: m.avatar || '' }; isEditing.value = true }
 function cancelEdit() { isEditing.value = false }
 function saveEdit() {
   if (!editData.value.name.trim()) { showToast('请输入姓名'); return }
-  familyStore.updateMember(detailMember.value.id, {
-    name: editData.value.name.trim(),
-    generation: editData.value.generation,
-    birthYear: editData.value.birthYear ? parseInt(editData.value.birthYear) : '',
-    spouse: editData.value.spouse.trim(),
-    isAlive: editData.value.isAlive,
-    avatar: editData.value.avatar
-  })
-  detailMember.value = familyStore.getMemberById(detailMember.value.id)
-  isEditing.value = false
-  showToast('修改成功')
+  familyStore.updateMember(detailMember.value.id, { name: editData.value.name.trim(), generation: editData.value.generation, birthYear: editData.value.birthYear ? parseInt(editData.value.birthYear) : '', spouse: editData.value.spouse.trim(), isAlive: editData.value.isAlive, avatar: editData.value.avatar })
+  detailMember.value = familyStore.getMemberById(detailMember.value.id); isEditing.value = false; showToast('修改成功')
 }
 function confirmDelete() {
   showConfirmDialog({ title: '确认删除', message: `确定要删除「${detailMember.value.name}」吗？此操作不可撤销。` })
-    .then(() => { familyStore.deleteMember(detailMember.value.id); showDetail.value = false; showToast('已删除') })
-    .catch(() => {})
+    .then(() => { familyStore.deleteMember(detailMember.value.id); showDetail.value = false; showToast('已删除') }).catch(() => {})
 }
-function goToMemoirs() { const mid = detailMember.value.id; showDetail.value = false; router.push({ path: '/memoir-combined', query: { id: mid } }) }
-function goRecordForMember() { showDetail.value = false; router.push('/memoir-record') }
+
+// 跳转到"我眼中的XX"录制页
+function goWritePerspective() {
+  const mid = detailMember.value.id
+  const mname = detailMember.value.name
+  showDetail.value = false
+  router.push({ path: '/memoir-record', query: { mode: 'perspective', subjectId: mid, subjectName: mname } })
+}
+// 跳转到查看"我眼中的XX"列表
+function goToPerspective() {
+  showDetail.value = false
+  router.push({ path: '/', query: { tab: 'perspective', subjectId: detailMember.value.id } })
+}
 </script>
 
 <style scoped>
@@ -336,41 +279,36 @@ function goRecordForMember() { showDetail.value = false; router.push('/memoir-re
 .add-btn { font-size: var(--font-size-sm); color: white; background: rgba(255,255,255,0.2); padding: var(--spacing-xs) var(--spacing-base); border-radius: var(--radius-full); cursor: pointer; display: flex; align-items: center; gap: 4px; }
 .add-btn:active { background: rgba(255,255,255,0.3); }
 
-.generations-list { padding: var(--spacing-base); }
-.generation-section { margin-bottom: var(--spacing-xl); }
-.gen-header { display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-base); padding-left: var(--spacing-sm); }
-.gen-num { width: 32px; height: 32px; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); color: white; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-base); font-weight: 700; font-family: var(--font-serif); flex-shrink: 0; }
-.gen-text { font-family: var(--font-serif); font-size: var(--font-size-lg); font-weight: 600; color: var(--text-color-primary); }
-.gen-count { font-size: var(--font-size-xs); color: var(--text-color-light); margin-left: auto; }
-
-.gen-members { display: flex; flex-direction: column; gap: var(--spacing-sm); padding-left: var(--spacing-sm); border-left: 2px solid var(--border-color-light); margin-left: 15px; padding-top: var(--spacing-xs); padding-bottom: var(--spacing-xs); }
-
-.member-card { display: flex; align-items: center; background: var(--bg-color-card); border-radius: var(--radius-lg); padding: var(--spacing-base); box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.3s; }
-.member-card:active { transform: scale(0.98); }
-.member-card.is-me { border: 1.5px solid var(--primary-color); background: var(--bg-color-warm); }
-
-.member-avatar { width: 44px; height: 44px; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); background-size: cover; background-position: center; color: white; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-md); font-weight: 600; margin-right: var(--spacing-base); flex-shrink: 0; }
-.member-avatar.deceased { background: var(--text-color-light); opacity: 0.6; }
-
-.member-info { flex: 1; min-width: 0; }
-.member-name-row { display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: 4px; }
-.member-name { font-family: var(--font-serif); font-size: var(--font-size-base); font-weight: 600; color: var(--text-color-primary); }
+/* 树形图 */
+.tree-scroll { overflow-x: auto; padding: var(--spacing-base); }
+.tree-container { display: flex; flex-direction: column; min-width: fit-content; }
+.tree-node-wrapper { position: relative; display: flex; align-items: stretch; }
+.tree-indent { width: 24px; position: relative; flex-shrink: 0; }
+.tree-indent::before { content: ''; position: absolute; left: 11px; top: 0; bottom: 0; width: 2px; background: var(--border-color); }
+.tree-indent.indent-empty::before { display: none; }
+.tree-node { display: flex; align-items: center; flex: 1; background: var(--bg-color-card); border-radius: var(--radius-lg); padding: var(--spacing-sm) var(--spacing-base); box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.3s; position: relative; margin-bottom: var(--spacing-sm); min-width: 180px; }
+.tree-node:active { transform: scale(0.98); }
+.tree-node.is-me { border: 1.5px solid var(--primary-color); background: var(--bg-color-warm); }
+.node-connector { position: absolute; left: -12px; top: 50%; width: 12px; height: 2px; background: var(--border-color); }
+.node-connector::before { content: ''; position: absolute; left: 0; top: -28px; width: 2px; height: 28px; background: var(--border-color); }
+.node-avatar { width: 40px; height: 40px; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); background-size: cover; background-position: center; color: white; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-md); font-weight: 600; margin-right: var(--spacing-sm); flex-shrink: 0; }
+.node-avatar.deceased { background: var(--text-color-light); opacity: 0.6; }
+.node-info { flex: 1; min-width: 0; }
+.node-name-row { display: flex; align-items: center; gap: var(--spacing-xs); }
+.node-name { font-family: var(--font-serif); font-size: var(--font-size-base); font-weight: 600; color: var(--text-color-primary); }
 .me-tag { font-size: 10px; color: white; background: var(--primary-color); padding: 1px 6px; border-radius: var(--radius-full); font-weight: 600; }
 .deceased-tag { font-size: 10px; color: white; background: var(--text-color-light); padding: 1px 6px; border-radius: var(--radius-full); }
-.member-meta { display: flex; flex-wrap: wrap; gap: var(--spacing-sm); font-size: var(--font-size-xs); color: var(--text-color-light); }
-.memoir-badge { color: var(--primary-color); font-weight: 500; }
-.member-arrow { color: var(--text-color-light); flex-shrink: 0; }
+.node-meta { font-size: var(--font-size-xs); color: var(--text-color-light); display: flex; flex-wrap: wrap; gap: 2px; }
+.node-arrow { color: var(--text-color-light); flex-shrink: 0; }
 
-.add-generation { display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm); padding: var(--spacing-lg); margin: var(--spacing-base) 0; border: 2px dashed var(--border-color); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.3s; color: var(--text-color-light); font-size: var(--font-size-sm); }
+.add-generation { display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm); padding: var(--spacing-lg); margin: var(--spacing-base); border: 2px dashed var(--border-color); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.3s; color: var(--text-color-light); font-size: var(--font-size-sm); }
 .add-generation:active { border-color: var(--primary-color); background: var(--bg-color-warm); color: var(--primary-color); }
 
-/* 照片上传 */
 .photo-upload-area { width: 80px; height: 80px; margin: 0 auto var(--spacing-lg); border-radius: var(--radius-full); cursor: pointer; }
 .photo-upload-area.compact { width: 64px; height: 64px; }
 .photo-preview { width: 100%; height: 100%; border-radius: var(--radius-full); background-size: cover; background-position: center; border: 2px solid var(--primary-soft); }
 .photo-placeholder { width: 100%; height: 100%; border-radius: var(--radius-full); border: 2px dashed var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-color-light); font-size: var(--font-size-xs); background: var(--bg-color-secondary); }
 
-/* 弹窗 */
 .add-popup { text-align: center; }
 .add-popup h3 { font-family: var(--font-serif); font-size: var(--font-size-lg); font-weight: 600; color: var(--text-color-primary); margin-bottom: var(--spacing-lg); }
 .add-form { text-align: left; margin-bottom: var(--spacing-lg); }
@@ -401,7 +339,7 @@ function goRecordForMember() { showDetail.value = false; router.push('/memoir-re
 .detail-value.deceased { color: var(--text-color-light); }
 .edit-form { text-align: left; margin-bottom: var(--spacing-lg); }
 .detail-actions { margin-top: var(--spacing-base); }
-.btn-memoir { display: block; width: 100%; padding: var(--spacing-base); background: var(--bg-color-warm); color: var(--primary-color); border: 1px solid var(--primary-soft); border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 500; cursor: pointer; margin-bottom: var(--spacing-sm); transition: all 0.3s; }
+.btn-memoir { display: block; width: 100%; padding: var(--spacing-base); background: var(--bg-color-warm); color: var(--primary-color); border: 1px solid var(--primary-soft); border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 500; cursor: pointer; margin-bottom: var(--spacing-sm); }
 .btn-memoir:active { transform: scale(0.98); }
 .btn-record { display: block; width: 100%; padding: var(--spacing-base); background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); color: white; border: none; border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 600; cursor: pointer; margin-bottom: var(--spacing-sm); box-shadow: var(--shadow-primary); }
 .btn-record:active { opacity: 0.9; }
