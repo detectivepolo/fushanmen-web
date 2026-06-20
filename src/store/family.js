@@ -68,7 +68,6 @@ const defaultMembers = [
   {
     id: 'member_001',
     name: '赵德福',
-    relation: '爷爷',
     generation: 1,
     avatar: '',
     birthYear: 1945,
@@ -79,7 +78,6 @@ const defaultMembers = [
   {
     id: 'member_002',
     name: '赵建国',
-    relation: '爸爸',
     generation: 2,
     avatar: '',
     birthYear: 1968,
@@ -90,7 +88,6 @@ const defaultMembers = [
   {
     id: 'member_003',
     name: '赵秀英',
-    relation: '姑姑',
     generation: 2,
     avatar: '',
     birthYear: 1972,
@@ -101,7 +98,6 @@ const defaultMembers = [
   {
     id: 'member_004',
     name: '陈晓东',
-    relation: '表弟',
     generation: 3,
     avatar: '',
     birthYear: 1998,
@@ -111,7 +107,6 @@ const defaultMembers = [
   {
     id: 'member_005',
     name: '赵大帅',
-    relation: '我',
     generation: 3,
     avatar: '',
     birthYear: 1995,
@@ -255,9 +250,8 @@ export const useFamilyStore = defineStore('family', () => {
     const newMember = {
       id: `member_${Date.now()}`,
       name: member.name,
-      relation: member.relation || '家人',
-      generation: member.generation || 3,
-      avatar: '',
+      generation: member.generation || 1,
+      avatar: member.avatar || '',
       birthYear: member.birthYear || '',
       isAlive: member.isAlive !== false,
       spouse: member.spouse || '',
