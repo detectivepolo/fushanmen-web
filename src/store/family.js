@@ -190,6 +190,9 @@ export const useFamilyStore = defineStore('family', () => {
     persist()
   }
 
+  // ===== 动态 =====
+  function getDynamics() { return dynamics.value }
+
   // ===== 大事记 =====
   function getMilestones() { return milestones.value }
   function getMilestoneById(id) { return milestones.value.find(m => m.id === id) }
