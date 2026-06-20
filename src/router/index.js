@@ -3,33 +3,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: () => import('@/views/home/index.vue'),
-    meta: { title: '赵家大院' }
+    name: 'Memoir',
+    component: () => import('@/views/memoir/index.vue'),
+    meta: { title: '回忆录' }
   },
   {
     path: '/family-tree',
     name: 'FamilyTree',
     component: () => import('@/views/family-tree/index.vue'),
-    meta: { title: '家谱' }
-  },
-  {
-    path: '/core-family',
-    name: 'CoreFamily',
-    component: () => import('@/views/core-family/index.vue'),
-    meta: { title: '我爱我家' }
-  },
-  {
-    path: '/core-family-detail',
-    name: 'CoreFamilyDetail',
-    component: () => import('@/views/core-family/detail.vue'),
-    meta: { title: '家族动态圈' }
-  },
-  {
-    path: '/memoir',
-    name: 'Memoir',
-    component: () => import('@/views/memoir/index.vue'),
-    meta: { title: '回忆录' }
+    meta: { title: '家族树' }
   },
   {
     path: '/memoir-record',
@@ -59,7 +41,7 @@ const routes = [
     path: '/milestone',
     name: 'Milestone',
     component: () => import('@/views/milestone/index.vue'),
-    meta: { title: '团圆大事记' }
+    meta: { title: '大事记' }
   },
   {
     path: '/milestone-create',
@@ -94,8 +76,7 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-  // 设置页面标题
-  document.title = to.meta.title ? `${to.meta.title} - 赵家大院` : '赵家大院'
+  document.title = to.meta.title ? `${to.meta.title} - 福善门` : '福善门'
   next()
 })
 
