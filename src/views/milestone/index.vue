@@ -1,7 +1,7 @@
 <template>
   <div class="page-container">
     <header class="page-header">
-      <h1>📅 团圆大事记</h1>
+      <h1>团聚大事记</h1>
     </header>
 
     <div class="page-content">
@@ -93,6 +93,19 @@ function formatDate(dateStr) {
 </script>
 
 <style scoped>
+.page-header {
+  background: linear-gradient(160deg, #B8765A 0%, #C8866A 60%, #D49B7E 100%);
+  color: white;
+  padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-xl);
+}
+
+.page-header h1 {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
 .quick-create {
   display: flex;
   align-items: center;
