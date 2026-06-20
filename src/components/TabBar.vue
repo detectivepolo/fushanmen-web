@@ -19,16 +19,20 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const tabs = [
-  { path: '/', label: '首页', icon: '🏠' },
-  { path: '/family-tree', label: '家谱', icon: '🌳' },
-  { path: '/memoir', label: '回忆', icon: '🎙️' },
-  { path: '/milestone', label: '大事记', icon: '📅' },
-  { path: '/mine', label: '我的', icon: '👤' }
+  { path: '/', label: '回忆录', icon: '📖' },
+  { path: '/family-tree', label: '家族树', icon: '🌳' },
+  { path: '/milestone', label: '大事记', icon: '📅' }
 ]
 
 function isActive(path) {
   if (path === '/') {
-    return route.path === '/'
+    return route.path === '/' || route.path.startsWith('/memoir')
+  }
+  if (path === '/family-tree') {
+    return route.path.startsWith('/family-tree')
+  }
+  if (path === '/milestone') {
+    return route.path.startsWith('/milestone')
   }
   return route.path.startsWith(path)
 }
@@ -43,12 +47,13 @@ function isActive(path) {
   display: flex;
   justify-content: space-around;
   align-items: center;
-  height: calc(60px + var(--safe-area-inset-bottom));
+  height: calc(64px + var(--safe-area-inset-bottom));
   padding-bottom: var(--safe-area-inset-bottom);
-  background: var(--bg-color-card);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border-color-light);
   z-index: var(--z-index-fixed);
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .tabbar-item {
@@ -57,10 +62,11 @@ function isActive(path) {
   align-items: center;
   justify-content: center;
   flex: 1;
-  height: 50px;
+  height: 54px;
   color: var(--text-color-light);
   text-decoration: none;
   transition: all 0.3s ease;
+  gap: 3px;
 }
 
 .tabbar-item.active {
@@ -68,16 +74,21 @@ function isActive(path) {
 }
 
 .tabbar-item.active .tabbar-item-icon {
-  transform: scale(1.1);
+  transform: scale(1.15);
 }
 
 .tabbar-item-icon {
-  font-size: 22px;
-  margin-bottom: 2px;
+  font-size: 24px;
   transition: transform 0.3s ease;
 }
 
 .tabbar-item-text {
-  font-size: 11px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.tabbar-item.active .tabbar-item-text {
+  font-weight: 600;
 }
 </style>
