@@ -17,7 +17,7 @@ import TabBar from './components/TabBar.vue'
 const route = useRoute()
 
 // 不显示底部导航的页面
-const noTabBarRoutes = ['/login', '/memoir-record', '/milestone-create', '/memoir-detail', '/milestone-detail']
+const noTabBarRoutes = ['/login', '/memoir-record', '/milestone-create', '/memoir-detail', '/milestone-detail', '/memoir-collection', '/memoir-combined', '/mine']
 
 const showTabBar = computed(() => {
   return !noTabBarRoutes.includes(route.path)
