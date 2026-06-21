@@ -9,7 +9,7 @@ html, body {
   font-family: var(--font-sans);
   font-size: var(--font-size-base);
   color: var(--text-color-primary);
-  background-color: var(--bg-color);
+  background-color: #E8EDE9;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
@@ -43,23 +43,6 @@ button, a, .clickable-area { min-height: 44px; min-width: 44px; }
   box-shadow: var(--shadow-primary); cursor: pointer; transition: all 0.3s;
 }
 .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
-
-.tabbar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  display: flex; justify-content: space-around; align-items: center;
-  height: calc(64px + var(--safe-area-inset-bottom));
-  padding-bottom: var(--safe-area-inset-bottom);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border-color-light);
-  z-index: var(--z-index-fixed);
-}
-.tabbar-item {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  flex: 1; height: 54px; color: var(--text-color-light);
-  text-decoration: none; transition: all 0.3s; gap: 3px;
-}
-.tabbar-item.active { color: var(--primary-color); }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 .fade-in { animation: fadeIn 0.5s ease-out; }
