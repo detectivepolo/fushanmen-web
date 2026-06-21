@@ -39,21 +39,17 @@ ${protagonistName}的这段记忆，带着岁月的温度。那些关于${tagStr
 
 // ============ 默认数据 ============
 const defaultMembers = [
-  { id: 'member_001', name: '赵德福', generation: 1, avatar: '', birthYear: 1945, isAlive: true, spouse: '王秀兰', children: ['member_002', 'member_003'] },
-  { id: 'member_002', name: '赵建国', generation: 2, avatar: '', birthYear: 1968, isAlive: true, spouse: '张丽华', children: ['member_005'] },
-  { id: 'member_003', name: '赵秀英', generation: 2, avatar: '', birthYear: 1972, isAlive: true, spouse: '陈明', children: ['member_004'] },
-  { id: 'member_004', name: '陈晓东', generation: 3, avatar: '', birthYear: 1998, isAlive: true, children: [] },
-  { id: 'member_005', name: '赵大帅', generation: 3, avatar: '', birthYear: 1995, isAlive: true, children: [] }
+  { id: 'member_001', name: '赵德福', generation: 1, avatar: '', birthYear: 1945, isAlive: true, spouse: '王秀兰', parentId: '', children: ['member_002', 'member_003'] },
+  { id: 'member_002', name: '赵建国', generation: 2, avatar: '', birthYear: 1968, isAlive: true, spouse: '张丽华', parentId: 'member_001', children: ['member_005'] },
+  { id: 'member_003', name: '赵秀英', generation: 2, avatar: '', birthYear: 1972, isAlive: true, spouse: '陈明', parentId: 'member_001', children: ['member_004'] },
+  { id: 'member_004', name: '陈晓东', generation: 3, avatar: '', birthYear: 1998, isAlive: true, parentId: 'member_003', children: [] },
+  { id: 'member_005', name: '赵大帅', generation: 3, avatar: '', birthYear: 1995, isAlive: true, parentId: 'member_002', children: [] }
 ]
 
 const defaultMemoirs = []
 const defaultCollections = []
 const defaultDynamics = []
-
-const defaultMilestones = [
-  { id: 'milestone_001', title: '2024年春节团圆', date: '2024-02-10', photos: [], description: '全家人齐聚一堂，共度新春佳节', participants: ['赵德福', '赵建国', '赵秀英', '赵大帅'], location: '老家', createdBy: 'member_002' },
-  { id: 'milestone_002', title: '爷爷八十大寿', date: '2024-05-01', photos: [], description: '爷爷八十岁大寿，全家人在酒店庆祝', participants: ['赵德福', '王秀兰', '赵建国', '张丽华', '赵大帅'], location: '福满楼酒店', createdBy: 'member_002' }
-]
+const defaultMilestones = []
 
 const stored = loadFromStorage()
 const initialMembers = stored?.members || defaultMembers
@@ -83,9 +79,17 @@ export const useFamilyStore = defineStore('family', () => {
       id: `member_${Date.now()}`, name: member.name,
       generation: member.generation || 1, avatar: member.avatar || '',
       birthYear: member.birthYear || '', isAlive: member.isAlive !== false,
-      spouse: member.spouse || '', children: []
+      spouse: member.spouse || '', parentId: member.parentId || '', children: []
     }
     members.value.push(newMember)
+    // 如果有父辈，自动建立 children 关系
+    if (member.parentId) {
+      const parent = members.value.find(m => m.id === member.parentId)
+      if (parent) {
+        if (!parent.children) parent.children = []
+        if (!parent.children.includes(newMember.id)) parent.children.push(newMember.id)
+      }
+    }
     persist()
     return newMember
   }
@@ -103,6 +107,12 @@ export const useFamilyStore = defineStore('family', () => {
           if (m.author?.id === id) m.author.name = newName
           if (m.subject?.id === id) m.subject.name = newName
         })
+        // 同步更新大事记参与者名字
+        milestones.value.forEach(ms => {
+          if (ms.participants) {
+            ms.participants = ms.participants.map(p => p === oldName ? newName : p)
+          }
+        })
       }
       persist()
       return members.value[idx]
@@ -117,9 +127,6 @@ export const useFamilyStore = defineStore('family', () => {
   }
 
   // ===== 回忆录管理 =====
-  // memoir 类型：
-  //   type: 'self' — 我的回忆（主角=自己，可整合到完整回忆录）
-  //   type: 'perspective' — 我眼中的XX（主角=自己，subject=被写的人，独立展示不整合）
   function getMemoirs() { return memoirs.value }
 
   function getMemoirsByProtagonist() {
@@ -136,7 +143,6 @@ export const useFamilyStore = defineStore('family', () => {
     return memoirs.value.filter(m => m.protagonist?.id === memberId)
   }
 
-  // 获取"我眼中的XX"类型的回忆
   function getPerspectiveMemoirs(subjectId) {
     if (subjectId) return memoirs.value.filter(m => m.type === 'perspective' && m.subject?.id === subjectId)
     return memoirs.value.filter(m => m.type === 'perspective')
@@ -197,8 +203,45 @@ export const useFamilyStore = defineStore('family', () => {
   function getMilestones() { return milestones.value }
   function getMilestoneById(id) { return milestones.value.find(m => m.id === id) }
   function addMilestone(milestone) {
-    const newMilestone = { ...milestone, id: `milestone_${Date.now()}` }
+    const newMilestone = { ...milestone, id: `milestone_${Date.now()}`, comments: [] }
     milestones.value.unshift(newMilestone); persist(); return newMilestone
+  }
+  function updateMilestone(id, updates) {
+    const idx = milestones.value.findIndex(m => m.id === id)
+    if (idx > -1) { milestones.value[idx] = { ...milestones.value[idx], ...updates }; persist(); return milestones.value[idx] }
+    return null
+  }
+  function deleteMilestone(id) {
+    milestones.value = milestones.value.filter(m => m.id !== id)
+    persist()
+  }
+
+  // ===== 大事记评论 =====
+  function addMilestoneComment(milestoneId, comment) {
+    const ms = milestones.value.find(m => m.id === milestoneId)
+    if (ms) {
+      if (!ms.comments) ms.comments = []
+      const now = new Date()
+      const newComment = {
+        id: `comment_${Date.now()}`,
+        author: comment.author || '匿名',
+        authorId: comment.authorId || '',
+        content: comment.content,
+        createdAt: `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
+      }
+      ms.comments.push(newComment)
+      persist()
+      return newComment
+    }
+    return null
+  }
+
+  function deleteMilestoneComment(milestoneId, commentId) {
+    const ms = milestones.value.find(m => m.id === milestoneId)
+    if (ms && ms.comments) {
+      ms.comments = ms.comments.filter(c => c.id !== commentId)
+      persist()
+    }
   }
 
   // ===== 合集 =====
@@ -225,7 +268,7 @@ export const useFamilyStore = defineStore('family', () => {
   function resetData() {
     members.value = [...defaultMembers]
     memoirs.value = []
-    milestones.value = [...defaultMilestones]
+    milestones.value = []
     dynamics.value = []
     collections.value = []
     persist()
@@ -236,7 +279,8 @@ export const useFamilyStore = defineStore('family', () => {
     getMembers, getMemberById, addMember, updateMember, deleteMember,
     getMemoirs, getMemoirsByProtagonist, getMemoirsByMemberId, getPerspectiveMemoirs, getMemoirById,
     addMemoir, mergeMemoir, getCombinedMemoir, updateMemoir, deleteMemoir,
-    getMilestones, getMilestoneById, addMilestone,
+    getMilestones, getMilestoneById, addMilestone, updateMilestone, deleteMilestone,
+    addMilestoneComment, deleteMilestoneComment,
     getDynamics, getCollections, getCollectionById, addCollection,
     getStats, setCurrentMember, resetData
   }
