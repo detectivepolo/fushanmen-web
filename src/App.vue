@@ -1,11 +1,13 @@
 <template>
   <div id="app">
-    <router-view v-slot="{ Component }">
-      <transition name="fade" mode="out-in">
-        <component :is="Component" />
-      </transition>
-    </router-view>
-    <TabBar v-if="showTabBar" />
+    <div class="app-wrapper">
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
+      <TabBar v-if="showTabBar" />
+    </div>
   </div>
 </template>
 
@@ -16,7 +18,6 @@ import TabBar from './components/TabBar.vue'
 
 const route = useRoute()
 
-// 不显示底部导航的页面
 const noTabBarRoutes = ['/login', '/memoir-record', '/milestone-create', '/memoir-detail', '/milestone-detail', '/memoir-collection', '/memoir-combined', '/mine']
 
 const showTabBar = computed(() => {
@@ -27,8 +28,25 @@ const showTabBar = computed(() => {
 <style>
 #app {
   width: 100%;
-  max-width: 100vw;
+  min-height: 100vh;
+  background: #E8EDE9;
+}
+
+.app-wrapper {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: var(--bg-color);
+  position: relative;
+  box-shadow: 0 0 40px rgba(90, 130, 104, 0.06);
   overflow-x: hidden;
+}
+
+@media (min-width: 481px) {
+  .app-wrapper {
+    box-shadow: 0 0 60px rgba(90, 130, 104, 0.1);
+  }
 }
 
 .fade-enter-active,
