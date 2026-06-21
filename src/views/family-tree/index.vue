@@ -29,9 +29,6 @@
             ></span>
             <div class="tree-node" :class="{ 'is-me': isMe(node.member) }" @click="showMemberDetail(node.member)">
               <span class="node-connector" v-if="node.depth > 0"></span>
-              <div class="node-avatar" :class="{ deceased: !node.member.isAlive }" :style="node.member.avatar ? { backgroundImage: `url(${node.member.avatar})` } : {}">
-                <span v-if="!node.member.avatar">{{ node.member.name.charAt(0) }}</span>
-              </div>
               <div class="node-info">
                 <div class="node-name-row">
                   <span class="node-name">{{ node.member.name }}</span>
@@ -116,7 +113,6 @@
 
         <div class="detail-actions">
           <template v-if="!isEditing">
-            <!-- 看此人被谁写过 -->
             <button v-if="perspectiveCount(detailMember.id) > 0" class="btn-memoir" @click="goToPerspective">「我眼中的{{ detailMember.name }}」（{{ perspectiveCount(detailMember.id) }}篇）</button>
             <button class="btn-record" @click="goWritePerspective">写「我眼中的{{ detailMember.name }}」</button>
             <button class="btn-primary btn-block" @click="startEdit">修改信息</button>
@@ -258,14 +254,12 @@ function confirmDelete() {
     .then(() => { familyStore.deleteMember(detailMember.value.id); showDetail.value = false; showToast('已删除') }).catch(() => {})
 }
 
-// 跳转到"我眼中的XX"录制页
 function goWritePerspective() {
   const mid = detailMember.value.id
   const mname = detailMember.value.name
   showDetail.value = false
   router.push({ path: '/memoir-record', query: { mode: 'perspective', subjectId: mid, subjectName: mname } })
 }
-// 跳转到查看"我眼中的XX"列表
 function goToPerspective() {
   showDetail.value = false
   router.push({ path: '/', query: { tab: 'perspective', subjectId: detailMember.value.id } })
@@ -279,7 +273,7 @@ function goToPerspective() {
 .add-btn { font-size: var(--font-size-sm); color: white; background: rgba(255,255,255,0.2); padding: var(--spacing-xs) var(--spacing-base); border-radius: var(--radius-full); cursor: pointer; display: flex; align-items: center; gap: 4px; }
 .add-btn:active { background: rgba(255,255,255,0.3); }
 
-/* 树形图 */
+/* 树形图 - 无头像 */
 .tree-scroll { overflow-x: auto; padding: var(--spacing-base); }
 .tree-container { display: flex; flex-direction: column; min-width: fit-content; }
 .tree-node-wrapper { position: relative; display: flex; align-items: stretch; }
@@ -291,14 +285,12 @@ function goToPerspective() {
 .tree-node.is-me { border: 1.5px solid var(--primary-color); background: var(--bg-color-warm); }
 .node-connector { position: absolute; left: -12px; top: 50%; width: 12px; height: 2px; background: var(--border-color); }
 .node-connector::before { content: ''; position: absolute; left: 0; top: -28px; width: 2px; height: 28px; background: var(--border-color); }
-.node-avatar { width: 40px; height: 40px; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); background-size: cover; background-position: center; color: white; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-md); font-weight: 600; margin-right: var(--spacing-sm); flex-shrink: 0; }
-.node-avatar.deceased { background: var(--text-color-light); opacity: 0.6; }
 .node-info { flex: 1; min-width: 0; }
 .node-name-row { display: flex; align-items: center; gap: var(--spacing-xs); }
 .node-name { font-family: var(--font-serif); font-size: var(--font-size-base); font-weight: 600; color: var(--text-color-primary); }
 .me-tag { font-size: 10px; color: white; background: var(--primary-color); padding: 1px 6px; border-radius: var(--radius-full); font-weight: 600; }
 .deceased-tag { font-size: 10px; color: white; background: var(--text-color-light); padding: 1px 6px; border-radius: var(--radius-full); }
-.node-meta { font-size: var(--font-size-xs); color: var(--text-color-light); display: flex; flex-wrap: wrap; gap: 2px; }
+.node-meta { font-size: var(--font-size-xs); color: var(--text-color-light); display: flex; flex-wrap: wrap; gap: 2px; margin-top: 2px; }
 .node-arrow { color: var(--text-color-light); flex-shrink: 0; }
 
 .add-generation { display: flex; align-items: center; justify-content: center; gap: var(--spacing-sm); padding: var(--spacing-lg); margin: var(--spacing-base); border: 2px dashed var(--border-color); border-radius: var(--radius-lg); cursor: pointer; transition: all 0.3s; color: var(--text-color-light); font-size: var(--font-size-sm); }
