@@ -5,7 +5,13 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="20" height="20"><polyline points="15 18 9 12 15 6" /></svg>
       </span>
       <h1>{{ pageTitle }}</h1>
-      <span class="step-indicator">{{ currentStep }}/{{ totalSteps }}</span>
+      <div class="step-progress">
+        <span class="sp-item" :class="{ active: getCurrentStepIndex() >= 0, done: getCurrentStepIndex() > 0 }">录音转文字</span>
+        <span class="sp-arrow">→</span>
+        <span class="sp-item" :class="{ active: getCurrentStepIndex() >= 1, done: getCurrentStepIndex() > 1 }">AI润色</span>
+        <span class="sp-arrow">→</span>
+        <span class="sp-item" :class="{ active: getCurrentStepIndex() >= 2 }">AI整合</span>
+      </div>
     </header>
 
     <div class="page-content">
@@ -24,7 +30,7 @@
       <!-- ========== 步骤（录音或写作） ========== -->
       <!-- 自录模式：步骤1 / 视角模式：步骤2 -->
       <div v-show="(isPerspective ? currentStep === 2 : currentStep === 1) && !submitted" class="step-content fade-in">
-        <div class="step-title">{{ isPerspective ? `写「我眼中的${selectedSubject?.name}」` : '开始讲述你的回忆' }}</div>
+        <div class="step-title">{{ isPerspective ? `写「我眼中的${selectedSubject?.name}」` : '录音转文字' }}</div>
 
         <!-- 录音 -->
         <div class="input-section">
@@ -59,7 +65,7 @@
 
       <!-- ========== AI润色预览 + 整合 ========== -->
       <div v-show="aiStepVisible && !submitted" class="step-content fade-in">
-        <div class="step-title">AI润色预览</div>
+        <div class="step-title">AI润色</div>
 
         <div class="ai-loading" v-if="aiLoading">
           <div class="loading-spinner"></div>
@@ -234,6 +240,14 @@ function submitMemoir() {
   submitted.value = true
 }
 
+function getCurrentStepIndex() {
+  if (submitted.value) return 2
+  if (aiStepVisible.value) return 1
+  if (isPerspective.value && currentStep.value === 1) return 0
+  if (isPerspective.value && currentStep.value === 2) return 0
+  return 0
+}
+
 function goToDetail() { router.replace({ path: '/memoir-detail', query: { id: savedMemoirId.value } }) }
 function goToHome() { router.replace('/') }
 </script>
@@ -304,4 +318,12 @@ function goToHome() { router.replace('/') }
 
 .fade-in { animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* 步骤进度条 */
+.step-progress { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.sp-item { color: var(--text-color-light); transition: all 0.3s; white-space: nowrap; }
+.sp-item.active { color: white; font-weight: 600; }
+.sp-item.done { color: rgba(255,255,255,0.6); }
+.sp-arrow { color: rgba(255,255,255,0.3); font-size: 10px; }
+.record-desc { font-size: var(--font-size-sm); color: var(--text-color-light); }
 </style>
