@@ -38,22 +38,7 @@
           </div>
           <div class="record-text">
             <span class="record-title">开始录制</span>
-            <div class="record-steps">
-              <span class="step-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z" /></svg>
-                转文字
-              </span>
-              <span class="step-arrow">→</span>
-              <span class="step-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
-                AI润色
-              </span>
-              <span class="step-arrow">→</span>
-              <span class="step-item">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="9 13" x2="15 13" /><line x1="9 17" x2="13 17" /></svg>
-                AI整合
-              </span>
-            </div>
+            <span class="record-desc">记录你的回忆</span>
           </div>
           <svg class="record-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><polyline points="9 18 15 12 9 6" /></svg>
         </div>
@@ -256,6 +241,7 @@ function formatDate(d) { if (!d) return ''; const date = new Date(d); return `${
 .record-card:active { transform: scale(0.98); }
 .record-icon-wrap { width: 48px; height: 48px; border-radius: var(--radius-full); background: var(--primary-bg); color: var(--primary-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: var(--spacing-base); }
 .record-text { flex: 1; display: flex; flex-direction: column; }
+.record-desc { font-size: var(--font-size-sm); color: var(--text-color-light); }
 .record-title { font-family: var(--font-serif); font-size: var(--font-size-md); font-weight: 600; color: var(--text-color-primary); margin-bottom: 4px; }
 .record-steps { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .step-item { display: flex; align-items: center; gap: 3px; font-size: var(--font-size-xs); color: var(--text-color-secondary); }
