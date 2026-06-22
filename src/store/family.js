@@ -74,10 +74,42 @@ export const useFamilyStore = defineStore('family', () => {
   function getMembers() { return members.value }
   function getMemberById(id) { return members.value.find(m => m.id === id) }
 
+  // 世代自动推算：从父辈链向上计算世代
+  function recalculateGenerations(startId) {
+    const member = members.value.find(m => m.id === startId)
+    if (!member) return
+    // 从父辈推算当前成员世代
+    if (member.parentId) {
+      const parent = members.value.find(m => m.id === member.parentId)
+      member.generation = parent ? (parent.generation || 1) + 1 : 1
+    } else {
+      member.generation = 1
+    }
+    // 递归更新所有后代
+    const updateDescendants = (parentId) => {
+      const p = members.value.find(m => m.id === parentId)
+      if (!p || !p.children) return
+      p.children.forEach(childId => {
+        const child = members.value.find(m => m.id === childId)
+        if (child) {
+          child.generation = p.generation + 1
+          updateDescendants(childId)
+        }
+      })
+    }
+    updateDescendants(startId)
+  }
+
   function addMember(member) {
+    // 自动从父辈推算世代
+    let generation = 1
+    if (member.parentId) {
+      const parent = members.value.find(m => m.id === member.parentId)
+      if (parent) generation = (parent.generation || 1) + 1
+    }
     const newMember = {
       id: `member_${Date.now()}`, name: member.name,
-      generation: member.generation || 1, avatar: member.avatar || '',
+      generation, avatar: member.avatar || '',
       birthYear: member.birthYear || '', isAlive: member.isAlive !== false,
       spouse: member.spouse || '', parentId: member.parentId || '', children: []
     }
@@ -99,7 +131,12 @@ export const useFamilyStore = defineStore('family', () => {
     if (idx > -1) {
       const oldName = members.value[idx].name
       const newName = updates.name || oldName
+      const oldParentId = members.value[idx].parentId
       members.value[idx] = { ...members.value[idx], ...updates }
+      // 如果父辈变了，重新推算世代（含所有后代）
+      if (updates.parentId !== undefined && updates.parentId !== oldParentId) {
+        recalculateGenerations(id)
+      }
       // 名字变更时同步更新回忆录
       if (newName !== oldName) {
         memoirs.value.forEach(m => {
@@ -277,6 +314,7 @@ export const useFamilyStore = defineStore('family', () => {
   return {
     members, memoirs, milestones, dynamics, collections, currentMember,
     getMembers, getMemberById, addMember, updateMember, deleteMember,
+    recalculateGenerations,
     getMemoirs, getMemoirsByProtagonist, getMemoirsByMemberId, getPerspectiveMemoirs, getMemoirById,
     addMemoir, mergeMemoir, getCombinedMemoir, updateMemoir, deleteMemoir,
     getMilestones, getMilestoneById, addMilestone, updateMilestone, deleteMilestone,
