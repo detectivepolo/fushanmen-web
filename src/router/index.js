@@ -14,6 +14,12 @@ const routes = [
     meta: { title: '家族树' }
   },
   {
+    path: '/family-tree-input',
+    name: 'FamilyTreeInput',
+    component: () => import('@/views/family-tree/input.vue'),
+    meta: { title: '录入家族信息' }
+  },
+  {
     path: '/memoir-record',
     name: 'MemoirRecord',
     component: () => import('@/views/memoir/record.vue'),
