@@ -1,7 +1,8 @@
 <template>
   <div class="page-container">
     <header class="page-header">
-      <h1>团聚大事记</h1>
+      <h1>大事记</h1>
+      <p class="header-hint">记录家族的重要时刻</p>
     </header>
 
     <div class="page-content">
@@ -14,7 +15,7 @@
         </div>
         <div class="create-info">
           <span class="create-title">记录新大事</span>
-          <span class="create-desc">留住家庭的重要时刻</span>
+          <span class="create-desc">记录团聚好时光</span>
         </div>
         <svg class="create-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="20" height="20">
           <polyline points="9 18 15 12 9 6" />
