@@ -37,15 +37,8 @@ ${protagonistName}的这段记忆，带着岁月的温度。那些关于${tagStr
 讲述：${protagonistName}`
 }
 
-// ============ 默认数据 ============
-const defaultMembers = [
-  { id: 'member_001', name: '赵德福', generation: 1, avatar: '', birthYear: 1945, isAlive: true, spouse: '王秀兰', parentId: '', children: ['member_002', 'member_003'] },
-  { id: 'member_002', name: '赵建国', generation: 2, avatar: '', birthYear: 1968, isAlive: true, spouse: '张丽华', parentId: 'member_001', children: ['member_005'] },
-  { id: 'member_003', name: '赵秀英', generation: 2, avatar: '', birthYear: 1972, isAlive: true, spouse: '陈明', parentId: 'member_001', children: ['member_004'] },
-  { id: 'member_004', name: '陈晓东', generation: 3, avatar: '', birthYear: 1998, isAlive: true, parentId: 'member_003', children: [] },
-  { id: 'member_005', name: '赵大帅', generation: 3, avatar: '', birthYear: 1995, isAlive: true, parentId: 'member_002', children: [] }
-]
-
+// ============ 默认数据（空，无mock） ============
+const defaultMembers = []
 const defaultMemoirs = []
 const defaultCollections = []
 const defaultDynamics = []
@@ -78,14 +71,12 @@ export const useFamilyStore = defineStore('family', () => {
   function recalculateGenerations(startId) {
     const member = members.value.find(m => m.id === startId)
     if (!member) return
-    // 从父辈推算当前成员世代
     if (member.parentId) {
       const parent = members.value.find(m => m.id === member.parentId)
       member.generation = parent ? (parent.generation || 1) + 1 : 1
     } else {
       member.generation = 1
     }
-    // 递归更新所有后代
     const updateDescendants = (parentId) => {
       const p = members.value.find(m => m.id === parentId)
       if (!p || !p.children) return
@@ -101,20 +92,26 @@ export const useFamilyStore = defineStore('family', () => {
   }
 
   function addMember(member) {
-    // 自动从父辈推算世代
     let generation = 1
     if (member.parentId) {
       const parent = members.value.find(m => m.id === member.parentId)
       if (parent) generation = (parent.generation || 1) + 1
     }
     const newMember = {
-      id: `member_${Date.now()}`, name: member.name,
-      generation, avatar: member.avatar || '',
-      birthYear: member.birthYear || '', isAlive: member.isAlive !== false,
-      spouse: member.spouse || '', parentId: member.parentId || '', children: []
+      id: `member_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      name: member.name,
+      gender: member.gender || '',
+      generation,
+      avatar: member.avatar || '',
+      birthYear: member.birthYear || '',
+      isAlive: member.isAlive !== false,
+      spouse: member.spouse || '',
+      spouseGender: member.spouseGender || '',
+      spouseBirthYear: member.spouseBirthYear || '',
+      parentId: member.parentId || '',
+      children: []
     }
     members.value.push(newMember)
-    // 如果有父辈，自动建立 children 关系
     if (member.parentId) {
       const parent = members.value.find(m => m.id === member.parentId)
       if (parent) {
@@ -126,6 +123,65 @@ export const useFamilyStore = defineStore('family', () => {
     return newMember
   }
 
+  // 批量录入家族成员（从输入页面提交）
+  function batchAddFamily(data) {
+    let parentId = null
+    // 1. 创建父亲（如果有）
+    if (data.father && data.father.name && data.father.name.trim()) {
+      const father = addMember({
+        name: data.father.name.trim(),
+        gender: 'male',
+        birthYear: data.father.birthYear || '',
+        spouse: (data.mother && data.mother.name && data.mother.name.trim()) ? data.mother.name.trim() : '',
+        spouseGender: (data.mother && data.mother.name && data.mother.name.trim()) ? 'female' : '',
+        spouseBirthYear: (data.mother && data.mother.birthYear) ? data.mother.birthYear : '',
+        isAlive: true,
+        parentId: ''
+      })
+      parentId = father.id
+    } else if (data.mother && data.mother.name && data.mother.name.trim()) {
+      // 只有母亲没有父亲
+      const mother = addMember({
+        name: data.mother.name.trim(),
+        gender: 'female',
+        birthYear: data.mother.birthYear || '',
+        spouse: '',
+        isAlive: true,
+        parentId: ''
+      })
+      parentId = mother.id
+    }
+
+    // 2. 创建核心人物
+    const self_ = addMember({
+      name: data.self.name.trim(),
+      gender: data.self.gender || '',
+      birthYear: data.self.birthYear || '',
+      spouse: (data.spouse && data.spouse.name && data.spouse.name.trim()) ? data.spouse.name.trim() : '',
+      spouseGender: (data.spouse && data.spouse.gender) ? data.spouse.gender : '',
+      spouseBirthYear: (data.spouse && data.spouse.birthYear) ? data.spouse.birthYear : '',
+      isAlive: true,
+      parentId: parentId || ''
+    })
+
+    // 3. 创建子女
+    if (data.children && data.children.length > 0) {
+      data.children.forEach(child => {
+        if (child.name && child.name.trim()) {
+          addMember({
+            name: child.name.trim(),
+            gender: child.gender || '',
+            birthYear: child.birthYear || '',
+            isAlive: true,
+            parentId: self_.id
+          })
+        }
+      })
+    }
+
+    persist()
+  }
+
   function updateMember(id, updates) {
     const idx = members.value.findIndex(m => m.id === id)
     if (idx > -1) {
@@ -133,18 +189,15 @@ export const useFamilyStore = defineStore('family', () => {
       const newName = updates.name || oldName
       const oldParentId = members.value[idx].parentId
       members.value[idx] = { ...members.value[idx], ...updates }
-      // 如果父辈变了，重新推算世代（含所有后代）
       if (updates.parentId !== undefined && updates.parentId !== oldParentId) {
         recalculateGenerations(id)
       }
-      // 名字变更时同步更新回忆录
       if (newName !== oldName) {
         memoirs.value.forEach(m => {
           if (m.protagonist?.id === id) m.protagonist.name = newName
           if (m.author?.id === id) m.author.name = newName
           if (m.subject?.id === id) m.subject.name = newName
         })
-        // 同步更新大事记参与者名字
         milestones.value.forEach(ms => {
           if (ms.participants) {
             ms.participants = ms.participants.map(p => p === oldName ? newName : p)
@@ -303,7 +356,7 @@ export const useFamilyStore = defineStore('family', () => {
   function setCurrentMember(member) { currentMember.value = member }
 
   function resetData() {
-    members.value = [...defaultMembers]
+    members.value = []
     memoirs.value = []
     milestones.value = []
     dynamics.value = []
@@ -314,7 +367,7 @@ export const useFamilyStore = defineStore('family', () => {
   return {
     members, memoirs, milestones, dynamics, collections, currentMember,
     getMembers, getMemberById, addMember, updateMember, deleteMember,
-    recalculateGenerations,
+    batchAddFamily, recalculateGenerations,
     getMemoirs, getMemoirsByProtagonist, getMemoirsByMemberId, getPerspectiveMemoirs, getMemoirById,
     addMemoir, mergeMemoir, getCombinedMemoir, updateMemoir, deleteMemoir,
     getMilestones, getMilestoneById, addMilestone, updateMilestone, deleteMilestone,
