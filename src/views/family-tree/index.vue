@@ -1,128 +1,107 @@
 <template>
   <div class="page-container">
     <header class="page-header">
-      <div class="header-inner">
-        <h1>家族树</h1>
-        <span class="add-btn" @click="openAddMember">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          添加
-        </span>
-      </div>
-      <p class="header-hint">现在开始输入家族的任意一人，你的祖辈或者你</p>
+      <h1>家族树</h1>
     </header>
 
     <div class="page-content">
+      <!-- 第一部分：开启家族树入口 -->
+      <div class="section-block tree-entry-section">
+        <div class="entry-card" @click="goToInput">
+          <div class="entry-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="24" height="24">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <div class="entry-text">
+            <span class="entry-title">{{ members.length > 0 ? '录入家族成员' : '开启家族树' }}</span>
+            <span class="entry-desc">从这里输入你的姓名，开启家族树</span>
+          </div>
+          <svg class="entry-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><polyline points="9 18 15 12 9 6" /></svg>
+        </div>
+      </div>
+
+      <!-- 第二部分：家族树 -->
+      <div class="section-block" v-if="members.length > 0">
+        <div class="section-header">
+          <h3 class="section-title">家族树</h3>
+          <span class="section-count">{{ members.length }}人</span>
+        </div>
+        <div class="tree-scroll">
+          <div class="tree-container">
+            <div v-for="gen in generationList" :key="gen" class="generation-group">
+              <div class="generation-label">
+                <span class="gen-label-text">第{{ toChineseNum(gen) }}代</span>
+                <span class="gen-label-line"></span>
+              </div>
+              <div
+                v-for="node in getGenTree(gen)"
+                :key="node.member.id"
+                class="tree-node-wrapper"
+                :style="{ paddingLeft: node.depth * 24 + 'px' }"
+              >
+                <span
+                  v-for="d in node.depth"
+                  :key="d"
+                  class="tree-indent"
+                  :class="{ 'indent-empty': node.ancestorIsLast[d - 1] }"
+                ></span>
+                <div class="tree-node" :class="{ 'is-me': isMe(node.member) }" @click="showMemberDetail(node.member)">
+                  <span class="node-connector" v-if="node.depth > 0"></span>
+                  <div class="node-info">
+                    <div class="node-name-row">
+                      <span class="node-name">{{ node.member.name }}</span>
+                      <span v-if="node.member.spouse" class="node-spouse"> & {{ node.member.spouse }}</span>
+                      <span v-if="isMe(node.member)" class="me-tag">我</span>
+                      <span v-if="!node.member.isAlive" class="deceased-tag">故</span>
+                    </div>
+                    <div class="node-meta">
+                      <span v-if="node.member.birthYear">{{ node.member.birthYear }}年生</span>
+                    </div>
+                  </div>
+                  <svg class="node-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- 孤立成员 -->
+            <div v-if="orphanMembers.length > 0" class="generation-group">
+              <div class="generation-label">
+                <span class="gen-label-text">其他成员</span>
+                <span class="gen-label-line"></span>
+              </div>
+              <div v-for="m in orphanMembers" :key="m.id" class="tree-node-wrapper">
+                <div class="tree-node" :class="{ 'is-me': isMe(m) }" @click="showMemberDetail(m)">
+                  <div class="node-info">
+                    <div class="node-name-row">
+                      <span class="node-name">{{ m.name }}</span>
+                      <span v-if="m.spouse" class="node-spouse"> & {{ m.spouse }}</span>
+                      <span v-if="isMe(m)" class="me-tag">我</span>
+                    </div>
+                    <div class="node-meta">
+                      <span v-if="m.birthYear">{{ m.birthYear }}年生</span>
+                    </div>
+                  </div>
+                  <svg class="node-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="9 18 15 12 9 6" /></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 空状态 -->
-      <div v-if="members.length === 0" class="empty-tree">
+      <div v-else class="empty-tree">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" width="48" height="48" class="empty-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
         <p class="empty-text">还没有家族成员</p>
-        <p class="empty-hint">点击右上角"添加"，从任意一人开始</p>
-      </div>
-
-      <!-- 树形图 -->
-      <div v-else class="tree-scroll">
-        <div class="tree-container">
-          <div v-for="gen in generationList" :key="gen" class="generation-group">
-            <div class="generation-label">
-              <span class="gen-label-text">第{{ toChineseNum(gen) }}代</span>
-              <span class="gen-label-line"></span>
-            </div>
-            <div
-              v-for="node in getGenTree(gen)"
-              :key="node.member.id"
-              class="tree-node-wrapper"
-              :style="{ paddingLeft: node.depth * 24 + 'px' }"
-            >
-              <span
-                v-for="d in node.depth"
-                :key="d"
-                class="tree-indent"
-                :class="{ 'indent-empty': node.ancestorIsLast[d - 1] }"
-              ></span>
-              <div class="tree-node" :class="{ 'is-me': isMe(node.member) }" @click="showMemberDetail(node.member)">
-                <span class="node-connector" v-if="node.depth > 0"></span>
-                <div class="node-info">
-                  <div class="node-name-row">
-                    <span class="node-name">{{ node.member.name }}</span>
-                    <span v-if="node.member.spouse" class="node-spouse"> & {{ node.member.spouse }}</span>
-                    <span v-if="isMe(node.member)" class="me-tag">我</span>
-                    <span v-if="!node.member.isAlive" class="deceased-tag">故</span>
-                  </div>
-                  <div class="node-meta">
-                    <span v-if="node.member.birthYear">{{ node.member.birthYear }}年生</span>
-                  </div>
-                </div>
-                <svg class="node-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- 孤立成员 -->
-          <div v-if="orphanMembers.length > 0" class="generation-group">
-            <div class="generation-label">
-              <span class="gen-label-text">其他成员</span>
-              <span class="gen-label-line"></span>
-            </div>
-            <div v-for="m in orphanMembers" :key="m.id" class="tree-node-wrapper">
-              <div class="tree-node" :class="{ 'is-me': isMe(m) }" @click="showMemberDetail(m)">
-                <div class="node-info">
-                  <div class="node-name-row">
-                    <span class="node-name">{{ m.name }}</span>
-                    <span v-if="m.spouse" class="node-spouse"> & {{ m.spouse }}</span>
-                    <span v-if="isMe(m)" class="me-tag">我</span>
-                  </div>
-                  <div class="node-meta">
-                    <span v-if="m.birthYear">{{ m.birthYear }}年生</span>
-                  </div>
-                </div>
-                <svg class="node-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="9 18 15 12 9 6" /></svg>
-              </div>
-            </div>
-          </div>
-        </div>
+        <p class="empty-hint">点击上方卡片，录入第一位家族成员</p>
       </div>
     </div>
-
-    <!-- 添加成员弹窗 -->
-    <van-popup v-model:show="showAddMember" round position="bottom" :style="{ padding: '20px', maxHeight: '85vh', overflow: 'auto' }">
-      <div class="add-popup">
-        <h3>添加家族成员</h3>
-        <div class="photo-upload-area" @click="triggerPhotoUpload">
-          <div v-if="newMember.avatar" class="photo-preview" :style="{ backgroundImage: `url(${newMember.avatar})` }"></div>
-          <div v-else class="photo-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
-            <span>添加照片</span>
-          </div>
-        </div>
-        <input ref="photoInput" type="file" accept="image/*" @change="onPhotoSelected" style="display:none" />
-        <div class="add-form"><label class="form-label">姓名 <span class="required">*</span></label><input v-model="newMember.name" type="text" class="form-input" placeholder="请输入姓名" maxlength="20" /></div>
-        <!-- 父母选择：从所有成员中选 -->
-        <div class="add-form" v-if="allMembers.length > 0">
-          <label class="form-label">父母是谁（谁的子女）</label>
-          <div class="parent-list">
-            <label v-for="p in allMembers" :key="p.id" class="parent-option" :class="{ active: newMember.parentId === p.id }">
-              <input type="radio" :value="p.id" v-model="newMember.parentId" style="display:none" />
-              <span class="parent-name">{{ p.name }}</span>
-              <span v-if="p.birthYear" class="parent-year">{{ p.birthYear }}年生</span>
-              <span v-if="p.spouse" class="parent-spouse">& {{ p.spouse }}</span>
-            </label>
-            <label class="parent-option no-parent" :class="{ active: !newMember.parentId }">
-              <input type="radio" :value="''" v-model="newMember.parentId" style="display:none" />
-              <span class="parent-name">不选（最长辈或配偶）</span>
-            </label>
-          </div>
-        </div>
-        <div class="add-form"><label class="form-label">出生年份</label><input v-model="newMember.birthYear" type="number" class="form-input" placeholder="例如：1990" min="1900" max="2030" /></div>
-        <div class="add-form"><label class="form-label">配偶</label><input v-model="newMember.spouse" type="text" class="form-input" placeholder="配偶姓名（可选）" maxlength="20" /></div>
-        <div class="add-form"><label class="form-label">是否健在</label><div class="alive-toggle"><button class="alive-btn" :class="{ active: newMember.isAlive }" @click="newMember.isAlive = true">健在</button><button class="alive-btn" :class="{ active: !newMember.isAlive }" @click="newMember.isAlive = false">故人</button></div></div>
-        <button class="btn-primary btn-block" @click="addMember">确认添加</button>
-        <button class="btn-cancel" @click="showAddMember = false">取消</button>
-      </div>
-    </van-popup>
 
     <!-- 成员详情 & 编辑弹窗 -->
     <van-popup v-model:show="showDetail" round position="bottom" :style="{ padding: '20px', maxHeight: '90vh', overflow: 'auto' }">
@@ -136,8 +115,9 @@
         </div>
 
         <div class="detail-info" v-if="!isEditing">
+          <div class="detail-row" v-if="detailMember.gender"><span class="detail-label">性别</span><span class="detail-value">{{ detailMember.gender === 'male' ? '男' : '女' }}</span></div>
           <div class="detail-row" v-if="detailMember.birthYear"><span class="detail-label">出生年份</span><span class="detail-value">{{ detailMember.birthYear }}年</span></div>
-          <div class="detail-row" v-if="detailMember.spouse"><span class="detail-label">配偶</span><span class="detail-value">{{ detailMember.spouse }}</span></div>
+          <div class="detail-row" v-if="detailMember.spouse"><span class="detail-label">配偶</span><span class="detail-value">{{ detailMember.spouse }}<span v-if="detailMember.spouseBirthYear" class="sub-info"> · {{ detailMember.spouseBirthYear }}年生</span></span></div>
           <div class="detail-row" v-if="childrenOfDetail.length > 0"><span class="detail-label">子女</span><span class="detail-value">{{ childrenOfDetail.map(c => c.name).join('、') }}</span></div>
           <div class="detail-row"><span class="detail-label">状态</span><span class="detail-value" :class="{ deceased: !detailMember.isAlive }">{{ detailMember.isAlive ? '健在' : '故人' }}</span></div>
         </div>
@@ -152,6 +132,13 @@
           </div>
           <input ref="editPhotoInput" type="file" accept="image/*" @change="onEditPhotoSelected" style="display:none" />
           <div class="add-form"><label class="form-label">姓名 <span class="required">*</span></label><input v-model="editData.name" type="text" class="form-input" maxlength="20" /></div>
+          <div class="add-form">
+            <label class="form-label">性别</label>
+            <div class="gender-toggle">
+              <button class="gender-btn" :class="{ active: editData.gender === 'male' }" @click="editData.gender = 'male'">男</button>
+              <button class="gender-btn" :class="{ active: editData.gender === 'female' }" @click="editData.gender = 'female'">女</button>
+            </div>
+          </div>
           <!-- 编辑时选父母：排除自己和自己的后代 -->
           <div class="add-form" v-if="editParentCandidates.length > 0">
             <label class="form-label">父母是谁（谁的子女）</label>
@@ -212,14 +199,7 @@ function toChineseNum(n) {
   return String(n)
 }
 
-// 所有成员列表（用于父母选择）
-const allMembers = computed(() => {
-  return members.value
-    .slice()
-    .sort((a, b) => (a.birthYear || 9999) - (b.birthYear || 9999))
-})
-
-// 所有出现的世代列表（自动推算）
+// 所有出现的世代列表
 const generationList = computed(() => {
   const gens = [...new Set(members.value.map(m => m.generation || 1))].sort((a, b) => a - b)
   return gens
@@ -261,6 +241,8 @@ function isMe(member) { return userStore.isLoggedIn && member.name === userStore
 function perspectiveCount(memberId) { return familyStore.getPerspectiveMemoirs(memberId).length }
 function getParentName(parentId) { const p = members.value.find(m => m.id === parentId); return p ? p.name : '' }
 
+function goToInput() { router.push('/family-tree-input') }
+
 function showMemberDetail(member) {
   detailMember.value = member
   isEditing.value = false
@@ -275,9 +257,7 @@ const childrenOfDetail = computed(() => {
 })
 
 // ===== 照片上传 =====
-const photoInput = ref(null)
 const editPhotoInput = ref(null)
-function triggerPhotoUpload() { photoInput.value?.click() }
 function triggerEditPhotoUpload() { editPhotoInput.value?.click() }
 
 function compressImage(file, callback) {
@@ -298,31 +278,7 @@ function compressImage(file, callback) {
   }
   reader.readAsDataURL(file)
 }
-function onPhotoSelected(e) { const f = e.target.files[0]; if (!f) return; compressImage(f, d => newMember.value.avatar = d); e.target.value = '' }
 function onEditPhotoSelected(e) { const f = e.target.files[0]; if (!f) return; compressImage(f, d => editData.value.avatar = d); e.target.value = '' }
-
-// ===== 添加成员 =====
-const showAddMember = ref(false)
-const newMember = ref({ name: '', birthYear: '', spouse: '', isAlive: true, avatar: '', parentId: '' })
-
-function openAddMember() {
-  newMember.value = { name: '', birthYear: '', spouse: '', isAlive: true, avatar: '', parentId: '' }
-  showAddMember.value = true
-}
-
-function addMember() {
-  if (!newMember.value.name.trim()) { showToast('请输入姓名'); return }
-  familyStore.addMember({
-    name: newMember.value.name.trim(),
-    birthYear: newMember.value.birthYear ? parseInt(newMember.value.birthYear) : '',
-    spouse: newMember.value.spouse.trim(),
-    isAlive: newMember.value.isAlive,
-    avatar: newMember.value.avatar,
-    parentId: newMember.value.parentId
-  })
-  showAddMember.value = false
-  showToast('添加成功')
-}
 
 // ===== 详情 & 编辑 =====
 const showDetail = ref(false)
@@ -333,7 +289,6 @@ const editData = ref({})
 // 编辑时的父母候选：排除自己和所有后代（防止循环）
 const editParentCandidates = computed(() => {
   if (!detailMember.value) return []
-  // 获取所有后代ID
   const getDescendantIds = (id) => {
     const member = members.value.find(m => m.id === id)
     if (!member || !member.children) return []
@@ -349,7 +304,7 @@ const editParentCandidates = computed(() => {
 
 function startEdit() {
   const m = detailMember.value
-  editData.value = { name: m.name, birthYear: m.birthYear || '', spouse: m.spouse || '', isAlive: m.isAlive, avatar: m.avatar || '', parentId: m.parentId || '' }
+  editData.value = { name: m.name, gender: m.gender || '', birthYear: m.birthYear || '', spouse: m.spouse || '', isAlive: m.isAlive, avatar: m.avatar || '', parentId: m.parentId || '' }
   isEditing.value = true
 }
 function cancelEdit() { isEditing.value = false }
@@ -357,7 +312,6 @@ function saveEdit() {
   if (!editData.value.name.trim()) { showToast('请输入姓名'); return }
   const oldParentId = detailMember.value.parentId
   const newParentId = editData.value.parentId
-  // 检查循环：新父母不能是自己的后代
   if (newParentId) {
     const getDescendantIds = (id) => {
       const member = members.value.find(m => m.id === id)
@@ -372,7 +326,6 @@ function saveEdit() {
       return
     }
   }
-  // 如果父辈变了，更新 children 关系
   if (oldParentId !== newParentId) {
     if (oldParentId) {
       const oldParent = members.value.find(m => m.id === oldParentId)
@@ -390,6 +343,7 @@ function saveEdit() {
   }
   familyStore.updateMember(detailMember.value.id, {
     name: editData.value.name.trim(),
+    gender: editData.value.gender,
     birthYear: editData.value.birthYear ? parseInt(editData.value.birthYear) : '',
     spouse: editData.value.spouse.trim(),
     isAlive: editData.value.isAlive,
@@ -419,17 +373,29 @@ function goToPerspective() {
 
 <style scoped>
 .page-header { background: linear-gradient(160deg, #6B9E7B 0%, #7AAF8B 60%, #9CC5A8 100%); color: white; padding: var(--spacing-2xl) var(--spacing-lg) var(--spacing-xl); }
-.header-inner { display: flex; align-items: center; justify-content: space-between; }
 .page-header h1 { font-family: var(--font-serif); font-size: var(--font-size-xl); font-weight: 700; letter-spacing: 0.05em; }
-.header-hint { font-size: var(--font-size-xs); opacity: 0.75; margin-top: var(--spacing-sm); letter-spacing: 0.02em; }
-.add-btn { font-size: var(--font-size-sm); color: white; background: rgba(255,255,255,0.2); padding: var(--spacing-xs) var(--spacing-base); border-radius: var(--radius-full); cursor: pointer; display: flex; align-items: center; gap: 4px; }
-.add-btn:active { background: rgba(255,255,255,0.3); }
+
+/* 入口卡片 */
+.tree-entry-section { margin-bottom: var(--spacing-xl); }
+.entry-card { display: flex; align-items: center; background: var(--bg-color-card); border-radius: var(--radius-xl); padding: var(--spacing-lg); cursor: pointer; transition: all 0.3s; box-shadow: var(--shadow-card); border-left: 3px solid var(--primary-color); }
+.entry-card:active { transform: scale(0.98); }
+.entry-icon-wrap { width: 48px; height: 48px; border-radius: var(--radius-full); background: var(--primary-bg); color: var(--primary-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-right: var(--spacing-base); }
+.entry-text { flex: 1; display: flex; flex-direction: column; }
+.entry-title { font-family: var(--font-serif); font-size: var(--font-size-md); font-weight: 600; color: var(--text-color-primary); margin-bottom: 4px; }
+.entry-desc { font-size: var(--font-size-sm); color: var(--text-color-light); }
+.entry-arrow { color: var(--text-color-light); flex-shrink: 0; }
 
 /* 空状态 */
 .empty-tree { text-align: center; padding: var(--spacing-3xl) var(--spacing-lg); }
 .empty-icon { color: var(--border-color); margin-bottom: var(--spacing-lg); }
 .empty-tree .empty-text { font-size: var(--font-size-base); color: var(--text-color-secondary); margin-bottom: var(--spacing-xs); }
 .empty-tree .empty-hint { font-size: var(--font-size-sm); color: var(--text-color-light); }
+
+/* 板块 */
+.section-block { margin-bottom: var(--spacing-xl); }
+.section-header { display: flex; align-items: baseline; gap: var(--spacing-sm); margin-bottom: var(--spacing-base); padding: 0 var(--spacing-xs); }
+.section-title { font-family: var(--font-serif); font-size: var(--font-size-lg); font-weight: 600; color: var(--text-color-primary); }
+.section-count { font-size: var(--font-size-sm); color: var(--text-color-light); }
 
 /* 世代分组 */
 .generation-group { margin-bottom: var(--spacing-lg); }
@@ -458,36 +424,12 @@ function goToPerspective() {
 .node-meta { font-size: var(--font-size-xs); color: var(--text-color-light); margin-top: 2px; }
 .node-arrow { color: var(--text-color-light); flex-shrink: 0; }
 
-.photo-upload-area { width: 80px; height: 80px; margin: 0 auto var(--spacing-lg); border-radius: var(--radius-full); cursor: pointer; }
-.photo-upload-area.compact { width: 64px; height: 64px; }
+/* 照片上传 */
+.photo-upload-area.compact { width: 64px; height: 64px; margin: 0 auto var(--spacing-lg); border-radius: var(--radius-full); cursor: pointer; }
 .photo-preview { width: 100%; height: 100%; border-radius: var(--radius-full); background-size: cover; background-position: center; border: 2px solid var(--primary-soft); }
 .photo-placeholder { width: 100%; height: 100%; border-radius: var(--radius-full); border: 2px dashed var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-color-light); font-size: var(--font-size-xs); background: var(--bg-color-secondary); }
 
-.add-popup { text-align: center; }
-.add-popup h3 { font-family: var(--font-serif); font-size: var(--font-size-lg); font-weight: 600; color: var(--text-color-primary); margin-bottom: var(--spacing-lg); }
-.add-form { text-align: left; margin-bottom: var(--spacing-lg); }
-.form-label { display: block; font-size: var(--font-size-sm); color: var(--text-color-secondary); margin-bottom: var(--spacing-xs); }
-.required { color: var(--danger-color); }
-.form-input { width: 100%; padding: var(--spacing-base); font-size: var(--font-size-base); border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-color-secondary); color: var(--text-color-primary); box-sizing: border-box; }
-.form-input:focus { outline: none; border-color: var(--primary-color); }
-
-/* 父母选择 */
-.parent-list { display: flex; flex-direction: column; gap: var(--spacing-xs); max-height: 240px; overflow-y: auto; }
-.parent-option { display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-base); background: var(--bg-color-secondary); border: 1.5px solid transparent; border-radius: var(--radius-md); cursor: pointer; transition: all 0.3s; }
-.parent-option.active { border-color: var(--primary-color); background: var(--primary-bg); }
-.parent-option:active { opacity: 0.8; }
-.parent-name { font-size: var(--font-size-sm); color: var(--text-color-primary); font-weight: 500; }
-.parent-year { font-size: var(--font-size-xs); color: var(--text-color-light); }
-.parent-spouse { font-size: var(--font-size-xs); color: var(--text-color-light); }
-.parent-option.no-parent .parent-name { color: var(--text-color-light); }
-
-.alive-toggle { display: flex; gap: var(--spacing-sm); }
-.alive-btn { flex: 1; padding: var(--spacing-sm); background: var(--bg-color-secondary); border: none; border-radius: var(--radius-md); font-size: var(--font-size-sm); color: var(--text-color-secondary); cursor: pointer; transition: all 0.3s; }
-.alive-btn.active { background: var(--primary-color); color: white; }
-.btn-primary { display: block; width: 100%; padding: var(--spacing-base); background: var(--primary-color); color: white; border: none; border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 600; cursor: pointer; }
-.btn-primary:active { opacity: 0.9; }
-.btn-cancel { display: block; width: 100%; margin-top: var(--spacing-sm); padding: var(--spacing-base); background: transparent; border: none; color: var(--text-color-light); font-size: var(--font-size-base); cursor: pointer; }
-
+/* 详情弹窗 */
 .detail-popup { text-align: center; }
 .detail-header { margin-bottom: var(--spacing-lg); }
 .detail-avatar { width: 64px; height: 64px; border-radius: var(--radius-full); background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); background-size: cover; background-position: center; color: white; display: flex; align-items: center; justify-content: center; font-size: var(--font-size-xl); font-weight: 600; margin: 0 auto var(--spacing-sm); }
@@ -499,8 +441,39 @@ function goToPerspective() {
 .detail-label { font-size: var(--font-size-sm); color: var(--text-color-light); }
 .detail-value { font-size: var(--font-size-sm); color: var(--text-color-primary); font-weight: 500; }
 .detail-value.deceased { color: var(--text-color-light); }
+.sub-info { font-size: var(--font-size-xs); color: var(--text-color-light); }
 .edit-form { text-align: left; margin-bottom: var(--spacing-lg); }
 .detail-actions { margin-top: var(--spacing-base); }
+
+/* 编辑表单 */
+.add-form { text-align: left; margin-bottom: var(--spacing-lg); }
+.form-label { display: block; font-size: var(--font-size-sm); color: var(--text-color-secondary); margin-bottom: var(--spacing-xs); }
+.required { color: var(--danger-color); }
+.form-input { width: 100%; padding: var(--spacing-base); font-size: var(--font-size-base); border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-color-secondary); color: var(--text-color-primary); box-sizing: border-box; }
+.form-input:focus { outline: none; border-color: var(--primary-color); }
+
+/* 性别选择 */
+.gender-toggle { display: flex; gap: var(--spacing-sm); }
+.gender-btn { flex: 1; padding: var(--spacing-sm); background: var(--bg-color-secondary); border: none; border-radius: var(--radius-md); font-size: var(--font-size-sm); color: var(--text-color-secondary); cursor: pointer; transition: all 0.3s; }
+.gender-btn.active { background: var(--primary-color); color: white; }
+
+/* 父母选择 */
+.parent-list { display: flex; flex-direction: column; gap: var(--spacing-xs); max-height: 240px; overflow-y: auto; }
+.parent-option { display: flex; align-items: center; gap: var(--spacing-sm); padding: var(--spacing-sm) var(--spacing-base); background: var(--bg-color-secondary); border: 1.5px solid transparent; border-radius: var(--radius-md); cursor: pointer; transition: all 0.3s; }
+.parent-option.active { border-color: var(--primary-color); background: var(--primary-bg); }
+.parent-option:active { opacity: 0.8; }
+.parent-name { font-size: var(--font-size-sm); color: var(--text-color-primary); font-weight: 500; }
+.parent-year { font-size: var(--font-size-xs); color: var(--text-color-light); }
+.parent-option.no-parent .parent-name { color: var(--text-color-light); }
+
+.alive-toggle { display: flex; gap: var(--spacing-sm); }
+.alive-btn { flex: 1; padding: var(--spacing-sm); background: var(--bg-color-secondary); border: none; border-radius: var(--radius-md); font-size: var(--font-size-sm); color: var(--text-color-secondary); cursor: pointer; transition: all 0.3s; }
+.alive-btn.active { background: var(--primary-color); color: white; }
+
+/* 按钮 */
+.btn-primary { display: block; width: 100%; padding: var(--spacing-base); background: var(--primary-color); color: white; border: none; border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 600; cursor: pointer; }
+.btn-primary:active { opacity: 0.9; }
+.btn-cancel { display: block; width: 100%; margin-top: var(--spacing-sm); padding: var(--spacing-base); background: transparent; border: none; color: var(--text-color-light); font-size: var(--font-size-base); cursor: pointer; }
 .btn-memoir { display: block; width: 100%; padding: var(--spacing-base); background: var(--bg-color-warm); color: var(--primary-color); border: 1px solid var(--primary-soft); border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 500; cursor: pointer; margin-bottom: var(--spacing-sm); }
 .btn-memoir:active { transform: scale(0.98); }
 .btn-record { display: block; width: 100%; padding: var(--spacing-base); background: linear-gradient(135deg, var(--primary-color), var(--primary-light)); color: white; border: none; border-radius: var(--radius-lg); font-size: var(--font-size-base); font-weight: 600; cursor: pointer; margin-bottom: var(--spacing-sm); box-shadow: var(--shadow-primary); }
