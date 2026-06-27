@@ -13,7 +13,8 @@
     "vue-router": "^4.3.0",
     "pinia": "^2.1.7",
     "vant": "^4.9.0",
-    "@vant/use": "^1.6.0"
+    "@vant/use": "^1.6.0",
+    "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
