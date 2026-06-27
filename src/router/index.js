@@ -70,7 +70,7 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/login/index.vue'),
+    component: () => import('@/views/auth/login.vue'),
     meta: { title: '登录' }
   }
 ]
@@ -80,10 +80,30 @@ const router = createRouter({
   routes
 })
 
-// 路由守卫
-router.beforeEach((to, from, next) => {
+// 路由守卫：检查登录状态
+router.beforeEach(async (to, from, next) => {
   document.title = to.meta.title ? `${to.meta.title} - 福善门` : '福善门'
-  next()
+  
+  // 登录页面不需要检查
+  if (to.path === '/login') {
+    next()
+    return
+  }
+  
+  // 其他页面需要登录
+  const { useAuthStore } = await import('@/store/auth')
+  const authStore = useAuthStore()
+  
+  if (!authStore.user) {
+    // 尝试初始化登录状态
+    await authStore.initAuth()
+  }
+  
+  if (!authStore.user) {
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router
